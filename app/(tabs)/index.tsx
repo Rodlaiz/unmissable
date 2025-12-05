@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +19,9 @@ import { Event, Category } from '../../types';
 import { searchEvents } from '../../services/ticketmaster';
 import { EventCard } from '../../components/EventCard';
 import { PRIMARY, PRIMARY_LIGHT } from '../../constants/colors';
+import { formatDateTime } from '../../utils/formatters';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type FilterType = 'All' | Category;
 
@@ -41,6 +45,8 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const bannerScrollRef = useRef<FlatList>(null);
 
   // Memoize location to prevent unnecessary re-fetches when only favorites change
   const userLocation = user?.location;
@@ -124,11 +130,24 @@ export default function HomeScreen() {
     const today = new Date();
     const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
     const sellingFast = seededShuffle(filtered, seed).slice(0, 5);
-    const justAnnounced = [...filtered].reverse().slice(0, 5);
+    const justAnnounced = [...filtered].reverse().slice(0, 8);
     const upcoming = filtered;
 
     return { thisWeekend, recommended, sellingFast, justAnnounced, upcoming };
   }, [allEvents, activeFilter, userCategories]);
+
+  // Auto-scroll banner carousel
+  useEffect(() => {
+    if (buckets.justAnnounced.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentBannerIndex((prev) => {
+        const nextIndex = (prev + 1) % buckets.justAnnounced.length;
+        bannerScrollRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+        return nextIndex;
+      });
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [buckets.justAnnounced.length]);
 
   const handleEventPress = (eventId: string) => {
     router.push(`/event/${eventId}`);
@@ -151,6 +170,96 @@ export default function HomeScreen() {
 
   const canFavorite = (event: Event): boolean => {
     return !!event.artistName;
+  };
+
+  const BANNER_WIDTH = SCREEN_WIDTH - 32; // Full width minus padding
+
+  const renderFeaturedCarousel = () => {
+    if (buckets.justAnnounced.length === 0) return null;
+
+    return (
+      <View className="py-2">
+        <View className="px-5 flex-row items-center justify-between mb-3">
+          <View className="flex-row items-center gap-2">
+            <Ionicons name="flash" size={20} color="#eab308" />
+            <Text className="text-lg font-bold text-gray-900 tracking-tight">Just Announced</Text>
+          </View>
+        </View>
+        <FlatList
+          ref={bannerScrollRef}
+          horizontal
+          data={buckets.justAnnounced}
+          keyExtractor={(item) => item.id}
+          showsHorizontalScrollIndicator={false}
+          pagingEnabled
+          snapToInterval={BANNER_WIDTH + 12}
+          decelerationRate="fast"
+          contentContainerStyle={{ paddingHorizontal: 16 }}
+          onMomentumScrollEnd={(e) => {
+            const index = Math.round(e.nativeEvent.contentOffset.x / (BANNER_WIDTH + 12));
+            setCurrentBannerIndex(index);
+          }}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => handleEventPress(item.id)}
+              style={{ width: BANNER_WIDTH, marginRight: 12 }}
+              className="relative h-52 rounded-2xl overflow-hidden shadow-lg"
+            >
+              <Image
+                source={item.imageUrl || 'https://via.placeholder.com/400x200'}
+                className="absolute inset-0 w-full h-full"
+                contentFit="cover"
+                transition={300}
+              />
+              <View className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <View className="absolute bottom-0 left-0 right-0 p-4">
+                <Text className="text-xl font-bold text-white mb-1" numberOfLines={2}>
+                  {item.artistName || item.name}
+                </Text>
+                <View className="flex-row items-center gap-2">
+                  <View className="flex-row items-center gap-1">
+                    <Ionicons name="calendar-outline" size={14} color="#d1d5db" />
+                    <Text className="text-gray-300 text-sm">{formatDateTime(item.date)}</Text>
+                  </View>
+                </View>
+                <View className="flex-row items-center gap-1 mt-1">
+                  <Ionicons name="location-outline" size={14} color="#d1d5db" />
+                  <Text className="text-gray-300 text-sm" numberOfLines={1}>{item.venue}</Text>
+                </View>
+              </View>
+              {/* Favorite button */}
+              {canFavorite(item) && (
+                <TouchableOpacity
+                  onPress={() => handleFavorite(item)}
+                  className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/30 items-center justify-center"
+                >
+                  <Ionicons
+                    name={isEventFavorited(item) ? 'heart' : 'heart-outline'}
+                    size={20}
+                    color={isEventFavorited(item) ? '#ef4444' : 'white'}
+                  />
+                </TouchableOpacity>
+              )}
+            </TouchableOpacity>
+          )}
+          getItemLayout={(_, index) => ({ length: BANNER_WIDTH + 12, offset: (BANNER_WIDTH + 12) * index, index })}
+        />
+        {/* Pagination dots */}
+        {buckets.justAnnounced.length > 1 && (
+          <View className="flex-row justify-center gap-1.5 mt-3">
+            {buckets.justAnnounced.map((_, idx) => (
+              <View
+                key={idx}
+                className={`h-1.5 rounded-full ${
+                  idx === currentBannerIndex ? 'w-4 bg-primary-600' : 'w-1.5 bg-gray-300'
+                }`}
+              />
+            ))}
+          </View>
+        )}
+      </View>
+    );
   };
 
   const renderSection = (title: string, icon: React.ReactNode, events: Event[]) => {
@@ -253,11 +362,8 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View className="pt-4 pb-8">
-            {renderSection(
-              'Just Announced',
-              <Ionicons name="flash" size={20} color="#eab308" />,
-              buckets.justAnnounced
-            )}
+            {/* Featured Carousel for Just Announced */}
+            {renderFeaturedCarousel()}
             {renderSection(
               'This Weekend',
               <Ionicons name="calendar" size={20} color={PRIMARY} />,

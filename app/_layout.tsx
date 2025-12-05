@@ -4,9 +4,13 @@ import { View, ActivityIndicator } from 'react-native';
 import { UserProvider, useUser } from '../context/UserContext';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { PRIMARY } from '../constants/colors';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 function RootLayoutNav() {
-  const { user, isLoading } = useUser();
+  const { user, authUser, isLoading } = useUser();
+
+  // Register for push notifications when user is authenticated
+  usePushNotifications(authUser?.id);
 
   // Show loading screen while checking user state
   if (isLoading) {
