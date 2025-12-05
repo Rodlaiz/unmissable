@@ -42,6 +42,7 @@ export function usePushNotifications(userId: string | null | undefined): void {
         }
 
         console.log('Push token saved successfully');
+        console.log('Your push token:', token);
         hasRegistered.current = true;
       } catch (error) {
         console.error('Error registering push notifications:', error);
