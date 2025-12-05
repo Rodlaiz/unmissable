@@ -27,6 +27,7 @@ function RootLayoutNav() {
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="event/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="artist/[id]" options={{ headerShown: false, gestureEnabled: true }} />
+        <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
       </Stack>
     </>
   );

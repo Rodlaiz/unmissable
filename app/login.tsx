@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { useUser } from '../context/UserContext';
 import { registerForPushNotificationsAsync } from '../services/notifications';
+import { supabase } from '../services/supabase';
 import Button from '../components/Button';
 import Input from '../components/Input';
 
@@ -196,11 +197,52 @@ export default function LoginScreen() {
       const result = await signInWithGoogle();
       if (result.success && result.error) {
         // result.error contains the OAuth URL
-        await WebBrowser.openBrowserAsync(result.error);
+        // Use openAuthSessionAsync to properly close browser after redirect
+        const authResult = await WebBrowser.openAuthSessionAsync(
+          result.error,
+          'unmissable://auth/callback'
+        );
+        
+        if (authResult.type === 'success' && authResult.url) {
+          // Extract tokens from the URL
+          const url = authResult.url;
+          
+          // The tokens are in the URL fragment (after #)
+          const hashIndex = url.indexOf('#');
+          if (hashIndex !== -1) {
+            const fragment = url.substring(hashIndex + 1);
+            const params = new URLSearchParams(fragment);
+            const accessToken = params.get('access_token');
+            const refreshToken = params.get('refresh_token');
+            
+            if (accessToken) {
+              // Set the session manually
+              const { data, error } = await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken || '',
+              });
+              
+              if (error) {
+                console.error('Error setting session:', error);
+                Alert.alert('Sign In Failed', 'Failed to complete sign in. Please try again.');
+                return;
+              }
+              
+              if (data.session) {
+                await handleAuthSuccess();
+                return;
+              }
+            }
+          }
+          
+          // Fallback: navigate to callback handler
+          router.push('/auth/callback');
+        }
       } else if (!result.success) {
         Alert.alert('Google Sign In Failed', result.error || 'Please try again.');
       }
     } catch (error) {
+      console.error('Google login error:', error);
       Alert.alert('Error', 'Failed to sign in with Google.');
     } finally {
       setIsLoading(false);
@@ -421,7 +463,7 @@ export default function LoginScreen() {
                 {/* Social Login Buttons */}
                 <View className="flex-row space-x-3 mb-6">
                   <TouchableOpacity
-                    className="flex-1 flex-row items-center justify-center py-3.5 px-4 bg-white border border-gray-200 rounded-xl mr-2"
+                    className="flex-1 flex-row items-center justify-center py-3.5 px-4 bg-white border border-gray-200 rounded-xl"
                     onPress={handleGoogleLogin}
                     disabled={isLoading}
                   >
@@ -429,7 +471,8 @@ export default function LoginScreen() {
                     <Text className="ml-2 font-semibold text-gray-700">Google</Text>
                   </TouchableOpacity>
 
-                  {Platform.OS === 'ios' && (
+                  {/* TODO: Enable Apple Sign In when Apple Developer account is set up - DO NOT REMOVE */}
+                  {/* {Platform.OS === 'ios' && (
                     <TouchableOpacity
                       className="flex-1 flex-row items-center justify-center py-3.5 px-4 bg-black rounded-xl ml-2"
                       onPress={handleAppleLogin}
@@ -438,7 +481,7 @@ export default function LoginScreen() {
                       <Ionicons name="logo-apple" size={22} color="white" />
                       <Text className="ml-2 font-semibold text-white">Apple</Text>
                     </TouchableOpacity>
-                  )}
+                  )} */}
                 </View>
 
                 {/* Skip Login */}
