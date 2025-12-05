@@ -5,6 +5,7 @@ const STORAGE_KEY = 'unmissable_user_prefs_v2';
 
 const defaultPreferences: UserPreferences = {
   hasOnboarded: false,
+  hasSeenLogin: false,
   location: {
     city: '',
     displayLabel: '',

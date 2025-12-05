@@ -3,6 +3,7 @@ export type EventStatus = 'ON_SALE' | 'SOLD_OUT' | 'CANCELED' | 'POSTPONED' | 'R
 
 export interface UserPreferences {
   hasOnboarded: boolean;
+  hasSeenLogin?: boolean;
   location: {
     city: string;
     displayLabel?: string;

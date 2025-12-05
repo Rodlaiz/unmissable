@@ -22,7 +22,6 @@ import { searchCities, LocationResult } from '../../services/location';
 import { searchAttractions } from '../../services/ticketmaster';
 import { registerForPushNotificationsAsync } from '../../services/notifications';
 import Button from '../../components/Button';
-import Slider from '@react-native-community/slider';
 import { PRIMARY, PRIMARY_DARK } from '../../constants/colors';
 
 const LOCATION_ILLUSTRATION = require('../../assets/images/onboarding-location.png');

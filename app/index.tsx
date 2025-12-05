@@ -15,10 +15,16 @@ export default function Index() {
     );
   }
 
-  // Redirect based on onboarding status
+  // If user has completed onboarding, go to main app
   if (user?.hasOnboarded) {
     return <Redirect href="/(tabs)" />;
   }
 
-  return <Redirect href="/onboarding" />;
+  // If user has seen login but hasn't onboarded, continue to onboarding
+  if (user?.hasSeenLogin && !user.hasOnboarded) {
+    return <Redirect href="/onboarding" />;
+  }
+
+  // New users go to login screen first
+  return <Redirect href="/login" />;
 }

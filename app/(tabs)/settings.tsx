@@ -134,7 +134,7 @@ export default function SettingsScreen() {
         style: 'destructive',
         onPress: () => {
           logout();
-          router.replace('/onboarding');
+          router.replace('/login');
         },
       },
     ]);
@@ -143,7 +143,7 @@ export default function SettingsScreen() {
   const handleResetOnboarding = () => {
     Alert.alert(
       'Reset & Redo Onboarding',
-      'This will clear all your preferences and take you back to the onboarding flow. Are you sure?',
+      'This will clear all your preferences and take you back to the login screen. Are you sure?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -152,7 +152,7 @@ export default function SettingsScreen() {
           onPress: async () => {
             await clearUserPreferences();
             logout();
-            router.replace('/onboarding');
+            router.replace('/login');
           },
         },
       ]
