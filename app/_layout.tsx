@@ -1,16 +1,27 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Platform } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { UserProvider, useUser } from '../context/UserContext';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { PRIMARY } from '../constants/colors';
 import { usePushNotifications } from '../hooks/usePushNotifications';
+import { useEffect } from 'react';
+import * as NavigationBar from 'expo-navigation-bar';
 
 function RootLayoutNav() {
   const { user, authUser, isLoading } = useUser();
 
   // Register for push notifications when user is authenticated
   usePushNotifications(authUser?.id);
+
+  // Hide Android navigation bar
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      NavigationBar.setVisibilityAsync('hidden');
+      NavigationBar.setBehaviorAsync('overlay-swipe');
+    }
+  }, []);
 
   // Show loading screen while checking user state
   if (isLoading) {
@@ -40,9 +51,11 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <ErrorBoundary>
-      <UserProvider>
-        <RootLayoutNav />
-      </UserProvider>
+      <SafeAreaProvider>
+        <UserProvider>
+          <RootLayoutNav />
+        </UserProvider>
+      </SafeAreaProvider>
     </ErrorBoundary>
   );
 }
