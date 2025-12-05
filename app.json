@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.unmissable.app",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Unmissable needs your location to show events near you."
       }
@@ -39,6 +40,8 @@
     "plugins": [
       "expo-router",
       "expo-font",
+      "expo-secure-store",
+      "expo-apple-authentication",
       [
         "expo-notifications",
         {

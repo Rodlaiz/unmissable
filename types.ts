@@ -1,9 +1,25 @@
 export type Category = 'Music' | 'Comedy' | 'Theater';
 export type EventStatus = 'ON_SALE' | 'SOLD_OUT' | 'CANCELED' | 'POSTPONED' | 'RESCHEDULED' | 'UNAVAILABLE';
 
+// Auth types
+export type AuthProvider = 'email' | 'google' | 'apple' | 'guest';
+
+export interface AuthUser {
+  id: string;
+  email: string | null;
+  provider: AuthProvider;
+  displayName?: string;
+  avatarUrl?: string;
+  emailVerified?: boolean;
+  createdAt?: string;
+}
+
 export interface UserPreferences {
   hasOnboarded: boolean;
   hasSeenLogin?: boolean;
+  // Auth info
+  authUser?: AuthUser;
+  isGuest?: boolean;
   location: {
     city: string;
     displayLabel?: string;
