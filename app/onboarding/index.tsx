@@ -10,6 +10,7 @@ import {
   Platform,
   Animated,
   Easing,
+  Modal,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,6 +28,7 @@ import { PRIMARY, PRIMARY_DARK } from '../../constants/colors';
 const LOCATION_ILLUSTRATION = require('../../assets/images/onboarding-location.png');
 const CATEGORY_ILLUSTRATION = require('../../assets/images/onboarding-category.png');
 const FAVORITES_ILLUSTRATION = require('../../assets/images/onboarding-favorites.png');
+const NOTIFICATIONS_ILLUSTRATION = require('../../assets/images/onboarding-notifications.png');
 const DONE_ILLUSTRATION = require('../../assets/images/onboarding-done.png');
 
 interface CategoryOption {
@@ -62,10 +64,12 @@ export default function OnboardingScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isArtistSearching, setIsArtistSearching] = useState(false);
+  const lastSearchRef = useRef<{ query: string; results: string[] }>({ query: '', results: [] });
 
   // Notification State
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [requestingPermission, setRequestingPermission] = useState(false);
+  const [showSkipModal, setShowSkipModal] = useState(false);
 
   // Animation refs for done screen
   const bounceAnim = useRef(new Animated.Value(0)).current;
@@ -123,12 +127,31 @@ export default function OnboardingScreen() {
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (searchQuery.length > 2) {
+        const queryLower = searchQuery.toLowerCase();
+        const lastQuery = lastSearchRef.current.query.toLowerCase();
+        const lastResults = lastSearchRef.current.results;
+        
+        // If the new query starts with the previous query, filter locally first
+        if (lastQuery && queryLower.startsWith(lastQuery) && lastResults.length > 0) {
+          const filtered = lastResults.filter((r) => 
+            r.toLowerCase().includes(queryLower) && !favorites.includes(r)
+          );
+          setSuggestions(filtered);
+          
+          // If we have local results, don't make an API call
+          if (filtered.length > 0) {
+            return;
+          }
+        }
+        
         setIsArtistSearching(true);
         const results = await searchAttractions(searchQuery);
+        lastSearchRef.current = { query: searchQuery, results };
         setSuggestions(results.filter((r) => !favorites.includes(r)));
         setIsArtistSearching(false);
       } else {
         setSuggestions([]);
+        lastSearchRef.current = { query: '', results: [] };
       }
     }, 500);
     return () => clearTimeout(delayDebounceFn);
@@ -190,9 +213,9 @@ export default function OnboardingScreen() {
     setRequestingPermission(true);
     try {
       const token = await registerForPushNotificationsAsync();
-      if (token) {
-        setNotificationsEnabled(true);
-      }
+      // Set as enabled even if token is null (e.g., in Expo Go)
+      // The important thing is the user attempted to enable
+      setNotificationsEnabled(true);
     } catch (e) {
       console.error('Notification error:', e);
     } finally {
@@ -206,6 +229,8 @@ export default function OnboardingScreen() {
     } else if (step === 'categories' && selectedCategories.length > 0) {
       setStep('favorites');
     } else if (step === 'favorites') {
+      setStep('notifications');
+    } else if (step === 'notifications') {
       setStep('done');
     } else if (step === 'done') {
       const prefs: UserPreferences = {
@@ -231,7 +256,7 @@ export default function OnboardingScreen() {
   };
 
   const renderProgressDots = () => {
-    const steps: OnboardingStep[] = ['location', 'categories', 'favorites', 'done'];
+    const steps: OnboardingStep[] = ['location', 'categories', 'favorites', 'notifications', 'done'];
     const stepIndex = steps.indexOf(step);
 
     return (
@@ -249,7 +274,7 @@ export default function OnboardingScreen() {
   const renderLocation = () => (
     <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
       <View className="items-center mb-6">
-        <Image source={LOCATION_ILLUSTRATION} className="w-40 h-40" contentFit="contain" />
+        <Image source={LOCATION_ILLUSTRATION} className="w-32 h-32" contentFit="contain" />
         <Text className="text-2xl font-bold text-gray-900 mt-4">Where are you?</Text>
         <Text className="text-gray-500 text-center">We'll show you events happening nearby.</Text>
       </View>
@@ -265,7 +290,7 @@ export default function OnboardingScreen() {
       </View>
 
       <View className="relative z-10">
-        <View className="flex-row items-center bg-white rounded-xl px-3 py-2.5 border border-gray-200">
+        <View className="flex-row items-center bg-white rounded-xl px-3 h-14 border border-gray-200">
           {selectedLocation ? (
             <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
           ) : (
@@ -275,6 +300,7 @@ export default function OnboardingScreen() {
             placeholder="e.g. Paris, London, New York"
             placeholderTextColor="#9ca3af"
             className="flex-1 ml-2 text-base text-gray-900"
+            style={{ paddingVertical: 0 }}
             value={locationQuery}
             onChangeText={(text) => {
               setLocationQuery(text);
@@ -299,7 +325,7 @@ export default function OnboardingScreen() {
         )}
       </View>
 
-      <View className="mt-6">
+      <View className="mt-10">
         <View className="flex-row justify-between mb-2">
           <Text className="text-sm font-medium text-gray-700">Search Radius</Text>
           <Text className="text-sm font-medium text-primary-600">{radius} km</Text>
@@ -451,6 +477,110 @@ export default function OnboardingScreen() {
     </KeyboardAvoidingView>
   );
 
+  const handleEnableNotifications = async () => {
+    setRequestingPermission(true);
+    try {
+      await registerForPushNotificationsAsync();
+      // Set as enabled even if token is null (e.g., in Expo Go)
+      // The important thing is the user attempted to enable
+      setNotificationsEnabled(true);
+      setStep('done');
+    } catch (e) {
+      console.error('Notification error:', e);
+    } finally {
+      setRequestingPermission(false);
+    }
+  };
+
+  const handleSkipNotifications = () => {
+    setShowSkipModal(true);
+  };
+
+  const handleConfirmSkip = () => {
+    setShowSkipModal(false);
+    setStep('done');
+  };
+
+  const handleModalEnableNotifications = async () => {
+    setShowSkipModal(false);
+    await handleEnableNotifications();
+  };
+
+  const renderNotifications = () => {
+    // Get first favorite artist name, or fallback
+    const artistName = favorites.length > 0 ? favorites[0] : 'your favorite artists';
+    // Get city name
+    const cityName = selectedLocation?.name || locationQuery || 'your city';
+
+    return (
+      <View className="flex-1 px-6 pt-6 pb-24">
+        <View className="items-center flex-1 justify-center">
+          <Image source={NOTIFICATIONS_ILLUSTRATION} className="w-40 h-40" contentFit="contain" />
+          
+          <Text className="text-2xl font-bold text-gray-900 mt-6 text-center">Don't miss the show</Text>
+          <Text className="text-gray-500 text-center mt-3 px-4 leading-6">
+            You followed <Text className="font-semibold text-gray-700">{artistName}</Text>. We'll ping you the moment they announce a <Text className="font-semibold text-gray-700">{cityName}</Text> date.
+          </Text>
+        </View>
+
+        <View className="mt-auto">
+          <Button
+            fullWidth
+            onPress={handleEnableNotifications}
+            loading={requestingPermission}
+            icon={<Ionicons name="notifications" size={16} color="white" />}
+          >
+            Enable Notifications
+          </Button>
+          
+          <TouchableOpacity 
+            onPress={handleSkipNotifications}
+            className="py-4 items-center"
+          >
+            <Text className="text-gray-500 text-sm">Skip for now</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Skip Confirmation Modal */}
+        <Modal
+          visible={showSkipModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowSkipModal(false)}
+        >
+          <View className="flex-1 bg-black/50 justify-end">
+            <View className="bg-white rounded-t-3xl px-6 pt-6 pb-10">
+              <View className="items-center mb-6">
+                <View className="w-12 h-1 bg-gray-300 rounded-full mb-6" />
+                <Text className="text-xl font-bold text-gray-900 text-center">Are you sure?</Text>
+                <Text className="text-gray-500 text-center mt-3 px-4 leading-6">
+                  This is literally the whole point of the app 😅{'\n\n'}
+                  Without notifications, you'll miss announcements from your favorite artists. Might as well delete the app...
+                </Text>
+              </View>
+
+              <Button
+                fullWidth
+                onPress={handleModalEnableNotifications}
+                loading={requestingPermission}
+                icon={<Ionicons name="notifications" size={16} color="white" />}
+              >
+                Enable Notifications
+              </Button>
+              
+              <TouchableOpacity 
+                onPress={handleConfirmSkip}
+                className="py-4 items-center mt-2"
+              >
+                <Text className="text-gray-400 text-sm">I'll take my chances</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    );
+  };
+
   const renderDone = () => {
     // Create 8 burst lines around the thumb
     const burstLines = [...Array(8)].map((_, i) => {
@@ -514,30 +644,30 @@ export default function OnboardingScreen() {
           We've found some events in {selectedLocation?.name || locationQuery} you might like.
         </Text>
 
-        <TouchableOpacity
-          onPress={requestNotifications}
-          disabled={notificationsEnabled || requestingPermission}
-          className={`w-full p-4 rounded-xl flex-row items-start gap-3 border ${
-            notificationsEnabled ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-100'
-          }`}
-        >
-          <View className={`p-1.5 rounded-full ${notificationsEnabled ? 'bg-green-200' : 'bg-blue-200'}`}>
-            {requestingPermission ? (
-              <ActivityIndicator size="small" color={notificationsEnabled ? '#15803d' : '#1d4ed8'} />
-          ) : (
-            <Ionicons name={notificationsEnabled ? 'checkmark' : 'notifications'} size={16} color={notificationsEnabled ? '#15803d' : '#1d4ed8'} />
-          )}
-        </View>
-        <View className="flex-1">
-          <Text className={`font-semibold text-sm ${notificationsEnabled ? 'text-green-900' : 'text-blue-900'}`}>
-            {notificationsEnabled ? 'Notifications Enabled' : 'Enable Notifications'}
-          </Text>
-          <Text className={`text-xs mt-1 ${notificationsEnabled ? 'text-green-700' : 'text-blue-700'}`}>
-            {notificationsEnabled ? 'You will be notified about upcoming events.' : "Don't miss out when your favorite artists announce a tour."}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    </ScrollView>
+        {!notificationsEnabled && (
+          <TouchableOpacity
+            onPress={requestNotifications}
+            disabled={requestingPermission}
+            className="w-full p-4 rounded-xl flex-row items-center gap-3 border bg-blue-50 border-blue-100"
+          >
+            <View className="p-2 rounded-full bg-blue-200 self-center">
+              {requestingPermission ? (
+                <ActivityIndicator size="small" color="#1d4ed8" />
+              ) : (
+                <Ionicons name="notifications" size={20} color="#1d4ed8" />
+              )}
+            </View>
+            <View className="flex-1 justify-center">
+              <Text className="font-semibold text-sm text-blue-900">
+                Enable Notifications
+              </Text>
+              <Text className="text-xs mt-1 text-blue-700">
+                Don't miss out when your favorite artists announce a tour.
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
     );
   };
 
@@ -547,30 +677,33 @@ export default function OnboardingScreen() {
         {step === 'location' && renderLocation()}
         {step === 'categories' && renderCategories()}
         {step === 'favorites' && renderFavorites()}
+        {step === 'notifications' && renderNotifications()}
         {step === 'done' && renderDone()}
       </View>
 
-      {/* Bottom Button */}
-      <View className="px-6">
-        <Button
-          fullWidth
-          onPress={handleNext}
-          disabled={
-            (step === 'location' && !selectedLocation && locationQuery.length < 2) ||
-            (step === 'categories' && selectedCategories.length === 0)
-          }
-          icon={step === 'done' ? <Ionicons name="arrow-forward" size={16} color="white" /> : undefined}
-          iconPosition="right"
-        >
-          {step === 'done'
-            ? "Let's Go"
-            : step === 'favorites'
-            ? favorites.length > 0
-              ? 'Continue'
-              : 'Skip for now'
-            : 'Next Step'}
-        </Button>
-      </View>
+      {/* Bottom Button - hidden on notifications step (has its own buttons) */}
+      {step !== 'notifications' && (
+        <View className="px-6">
+          <Button
+            fullWidth
+            onPress={handleNext}
+            disabled={
+              (step === 'location' && !selectedLocation && locationQuery.length < 2) ||
+              (step === 'categories' && selectedCategories.length === 0)
+            }
+            icon={step === 'done' ? <Ionicons name="arrow-forward" size={16} color="white" /> : undefined}
+            iconPosition="right"
+          >
+            {step === 'done'
+              ? "Let's Go"
+              : step === 'favorites'
+              ? favorites.length > 0
+                ? 'Continue'
+                : 'Skip for now'
+              : 'Next Step'}
+          </Button>
+        </View>
+      )}
 
       {renderProgressDots()}
     </SafeAreaView>

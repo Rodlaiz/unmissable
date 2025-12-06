@@ -63,4 +63,4 @@ export interface ArtistProfile {
   status: 'local' | 'global' | 'none';
 }
 
-export type OnboardingStep = 'location' | 'categories' | 'favorites' | 'done';
+export type OnboardingStep = 'location' | 'categories' | 'favorites' | 'notifications' | 'done';

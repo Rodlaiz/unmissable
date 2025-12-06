@@ -304,18 +304,21 @@ export default function ArtistDetailScreen() {
           {isValidArtist && (
             <View className="mb-6">
               {isFollowing ? (
-                <Button variant="secondary" fullWidth onPress={toggleFollow}>
-                  <View className="flex-row items-center gap-2">
-                    <Ionicons name="checkmark" size={16} color="#374151" />
-                    <Text className="text-gray-600 font-semibold">Following</Text>
-                  </View>
+                <Button 
+                  variant="secondary" 
+                  fullWidth 
+                  onPress={toggleFollow}
+                  icon={<Ionicons name="checkmark" size={16} color="#374151" />}
+                >
+                  Following
                 </Button>
               ) : (
-                <Button fullWidth onPress={toggleFollow}>
-                  <View className="flex-row items-center gap-2">
-                    <Ionicons name="add" size={16} color="white" />
-                    <Text className="text-white font-semibold">Follow</Text>
-                  </View>
+                <Button 
+                  fullWidth 
+                  onPress={toggleFollow}
+                  icon={<Ionicons name="add" size={16} color="white" />}
+                >
+                  Follow
                 </Button>
               )}
             </View>
