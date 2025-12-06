@@ -227,6 +227,7 @@ export const resetPassword = async (email: string): Promise<AuthResult> => {
 };
 
 // Sync user profile to users table (call after successful auth)
+// Uses update first to preserve existing fields like push_token, then inserts if user doesn't exist
 export const syncUserProfile = async (user: User): Promise<void> => {
   try {
     const email = user.email || null;
@@ -235,19 +236,36 @@ export const syncUserProfile = async (user: User): Promise<void> => {
                         user.user_metadata?.display_name || 
                         null;
 
-    const { error } = await supabase
+    // First try to update existing user (preserves push_token and other fields)
+    const { data: updateData, error: updateError } = await supabase
       .from('users')
-      .upsert(
-        {
+      .update({
+        email: email,
+        display_name: displayName,
+      })
+      .eq('id', user.id)
+      .select();
+
+    if (updateError) {
+      console.error('Failed to update user profile:', updateError.message);
+      return;
+    }
+
+    // If no rows were updated, the user doesn't exist yet - insert them
+    if (!updateData || updateData.length === 0) {
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({
           id: user.id,
           email: email,
           display_name: displayName,
-        },
-        { onConflict: 'id' }
-      );
+        });
 
-    if (error) {
-      console.error('Failed to sync user profile to Supabase:', error.message);
+      if (insertError) {
+        console.error('Failed to insert user profile:', insertError.message);
+      } else {
+        console.log('User profile created in Supabase successfully');
+      }
     } else {
       console.log('User profile synced to Supabase successfully');
     }

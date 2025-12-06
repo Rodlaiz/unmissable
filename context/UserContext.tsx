@@ -142,22 +142,20 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(sanitizedPrefs);
 
     // Sync location data to Supabase if user is authenticated
+    // Uses update to preserve existing fields like push_token
     const currentAuthUser = authUser || sanitizedPrefs.authUser;
     if (currentAuthUser && !sanitizedPrefs.isGuest && sanitizedPrefs.location) {
       try {
         const { error } = await supabase
           .from('users')
-          .upsert(
-            {
-              id: currentAuthUser.id,
-              city: sanitizedPrefs.location.city || null,
-              country: sanitizedPrefs.location.country || null,
-              latitude: sanitizedPrefs.location.latitude || null,
-              longitude: sanitizedPrefs.location.longitude || null,
-              radius_km: sanitizedPrefs.location.radiusKm || 25,
-            },
-            { onConflict: 'id' }
-          );
+          .update({
+            city: sanitizedPrefs.location.city || null,
+            country: sanitizedPrefs.location.country || null,
+            latitude: sanitizedPrefs.location.latitude || null,
+            longitude: sanitizedPrefs.location.longitude || null,
+            radius_km: sanitizedPrefs.location.radiusKm || 25,
+          })
+          .eq('id', currentAuthUser.id);
 
         if (error) {
           console.error('Failed to sync location to Supabase:', error.message);
