@@ -131,6 +131,34 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
     await saveUserPreferences(sanitizedPrefs);
     setUser(sanitizedPrefs);
+
+    // Sync location data to Supabase if user is authenticated
+    const currentAuthUser = authUser || sanitizedPrefs.authUser;
+    if (currentAuthUser && !sanitizedPrefs.isGuest && sanitizedPrefs.location) {
+      try {
+        const { error } = await supabase
+          .from('users')
+          .upsert(
+            {
+              id: currentAuthUser.id,
+              city: sanitizedPrefs.location.city || null,
+              country: sanitizedPrefs.location.country || null,
+              latitude: sanitizedPrefs.location.latitude || null,
+              longitude: sanitizedPrefs.location.longitude || null,
+              radius_km: sanitizedPrefs.location.radiusKm || 25,
+            },
+            { onConflict: 'id' }
+          );
+
+        if (error) {
+          console.error('Failed to sync location to Supabase:', error.message);
+        } else {
+          console.log('Location synced to Supabase successfully');
+        }
+      } catch (error) {
+        console.error('Error syncing location to Supabase:', error);
+      }
+    }
   };
 
   const handleSignIn = async (email: string, password: string): Promise<AuthResult> => {

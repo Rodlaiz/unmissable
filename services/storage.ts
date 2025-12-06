@@ -8,6 +8,7 @@ const defaultPreferences: UserPreferences = {
   hasSeenLogin: false,
   location: {
     city: '',
+    country: '',
     displayLabel: '',
     latitude: null,
     longitude: null,

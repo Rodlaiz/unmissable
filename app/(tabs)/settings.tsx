@@ -193,6 +193,7 @@ export default function SettingsScreen() {
         location: {
           ...user.location,
           city: selectedLoc.name,
+          country: selectedLoc.country,
           displayLabel: `${selectedLoc.name}, ${selectedLoc.country}`,
           latitude: selectedLoc.latitude,
           longitude: selectedLoc.longitude,
@@ -205,6 +206,7 @@ export default function SettingsScreen() {
         location: {
           ...user.location,
           city: locQuery,
+          country: '',
           displayLabel: locQuery,
           latitude: null,
           longitude: null,

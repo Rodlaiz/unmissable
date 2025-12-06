@@ -244,6 +244,7 @@ export default function OnboardingScreen() {
         hasOnboarded: true,
         location: {
           city: selectedLocation ? selectedLocation.name : locationQuery,
+          country: selectedLocation?.country || '',
           displayLabel: selectedLocation ? `${selectedLocation.name}, ${selectedLocation.country}` : locationQuery,
           latitude: selectedLocation?.latitude || null,
           longitude: selectedLocation?.longitude || null,

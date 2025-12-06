@@ -22,6 +22,7 @@ export interface UserPreferences {
   isGuest?: boolean;
   location: {
     city: string;
+    country?: string;
     displayLabel?: string;
     latitude: number | null;
     longitude: number | null;
