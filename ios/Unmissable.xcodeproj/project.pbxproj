@@ -8,28 +8,28 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		1FEA086BFAAEA782BCD43A4F /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFD9AC7FF4406FFAF35C64A /* ExpoModulesProvider.swift */; };
+		150D1811CE0AE36876BE9553 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EDADF7AE3EF60E4AC76AEAE1 /* PrivacyInfo.xcprivacy */; };
+		3AEB284F6570E09ED12860DE /* libPods-Unmissable.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BCE2EBEDDBC7E2B7B054178E /* libPods-Unmissable.a */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		DCA478D4167AE0BE3DF70FA8 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 4DB43E4855D5F477A10A189A /* PrivacyInfo.xcprivacy */; };
-		EE86EFC88B4F35A7C6A19023 /* libPods-Unmissable.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 92C8D20837B706710B029B15 /* libPods-Unmissable.a */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		FD8DAE6ADDBE37DA192C5D13 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4B6884D3EF5B393980442A0 /* ExpoModulesProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		13B07F961A680F5B00A75B9A /* Unmissable.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Unmissable.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Unmissable/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Unmissable/Info.plist; sourceTree = "<group>"; };
-		4DB43E4855D5F477A10A189A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Unmissable/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		4E8B4372B54A30298E6BE300 /* Pods-Unmissable.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Unmissable.release.xcconfig"; path = "Target Support Files/Pods-Unmissable/Pods-Unmissable.release.xcconfig"; sourceTree = "<group>"; };
-		92C8D20837B706710B029B15 /* libPods-Unmissable.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Unmissable.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		1C0B5327E140A4BEC6AF315B /* Pods-Unmissable.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Unmissable.debug.xcconfig"; path = "Target Support Files/Pods-Unmissable/Pods-Unmissable.debug.xcconfig"; sourceTree = "<group>"; };
+		3399695BB25277D06FCC34EB /* Pods-Unmissable.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Unmissable.release.xcconfig"; path = "Target Support Files/Pods-Unmissable/Pods-Unmissable.release.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Unmissable/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		BCE2EBEDDBC7E2B7B054178E /* libPods-Unmissable.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Unmissable.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		EFA25CC6F633F5780934B740 /* Pods-Unmissable.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Unmissable.debug.xcconfig"; path = "Target Support Files/Pods-Unmissable/Pods-Unmissable.debug.xcconfig"; sourceTree = "<group>"; };
+		EDADF7AE3EF60E4AC76AEAE1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Unmissable/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Unmissable/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* Unmissable-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Unmissable-Bridging-Header.h"; path = "Unmissable/Unmissable-Bridging-Header.h"; sourceTree = "<group>"; };
-		FDFD9AC7FF4406FFAF35C64A /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Unmissable/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		F4B6884D3EF5B393980442A0 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Unmissable/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EE86EFC88B4F35A7C6A19023 /* libPods-Unmissable.a in Frameworks */,
+				3AEB284F6570E09ED12860DE /* libPods-Unmissable.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,36 +53,26 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				4DB43E4855D5F477A10A189A /* PrivacyInfo.xcprivacy */,
+				EDADF7AE3EF60E4AC76AEAE1 /* PrivacyInfo.xcprivacy */,
 			);
 			name = Unmissable;
 			sourceTree = "<group>";
 		};
-		18A28C8D143A66790B920156 /* Pods */ = {
+		24CF7CFBD669A9D6F721332B /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				EFA25CC6F633F5780934B740 /* Pods-Unmissable.debug.xcconfig */,
-				4E8B4372B54A30298E6BE300 /* Pods-Unmissable.release.xcconfig */,
+				DF54E53DFA8639A4F33CAFE9 /* Unmissable */,
 			);
-			name = Pods;
-			path = Pods;
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				92C8D20837B706710B029B15 /* libPods-Unmissable.a */,
+				BCE2EBEDDBC7E2B7B054178E /* libPods-Unmissable.a */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		50119B2255584D9B7FE5691D /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				855F640B2224DBB0C53B134B /* Unmissable */,
-			);
-			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -99,8 +89,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				18A28C8D143A66790B920156 /* Pods */,
-				50119B2255584D9B7FE5691D /* ExpoModulesProviders */,
+				D1FF737ADCDC8A2ACB6CB1D6 /* Pods */,
+				24CF7CFBD669A9D6F721332B /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -115,14 +105,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		855F640B2224DBB0C53B134B /* Unmissable */ = {
-			isa = PBXGroup;
-			children = (
-				FDFD9AC7FF4406FFAF35C64A /* ExpoModulesProvider.swift */,
-			);
-			name = Unmissable;
-			sourceTree = "<group>";
-		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
 			isa = PBXGroup;
 			children = (
@@ -130,6 +112,24 @@
 			);
 			name = Supporting;
 			path = Unmissable/Supporting;
+			sourceTree = "<group>";
+		};
+		D1FF737ADCDC8A2ACB6CB1D6 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				1C0B5327E140A4BEC6AF315B /* Pods-Unmissable.debug.xcconfig */,
+				3399695BB25277D06FCC34EB /* Pods-Unmissable.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		DF54E53DFA8639A4F33CAFE9 /* Unmissable */ = {
+			isa = PBXGroup;
+			children = (
+				F4B6884D3EF5B393980442A0 /* ExpoModulesProvider.swift */,
+			);
+			name = Unmissable;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -140,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Unmissable" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				BE20A29C34BD2D4561FD6829 /* [Expo] Configure project */,
+				F37FDFA6066C5059F4AB0258 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				128909CB824A77A6FC9953A6 /* [CP] Embed Pods Frameworks */,
+				51711B8CAF6329A4A3D628B5 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -196,7 +196,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				DCA478D4167AE0BE3DF70FA8 /* PrivacyInfo.xcprivacy in Resources */,
+				150D1811CE0AE36876BE9553 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -242,7 +242,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		128909CB824A77A6FC9953A6 /* [CP] Embed Pods Frameworks */ = {
+		51711B8CAF6329A4A3D628B5 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -306,7 +306,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Unmissable/Pods-Unmissable-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		BE20A29C34BD2D4561FD6829 /* [Expo] Configure project */ = {
+		F37FDFA6066C5059F4AB0258 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -338,7 +338,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				1FEA086BFAAEA782BCD43A4F /* ExpoModulesProvider.swift in Sources */,
+				FD8DAE6ADDBE37DA192C5D13 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -347,7 +347,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = EFA25CC6F633F5780934B740 /* Pods-Unmissable.debug.xcconfig */;
+			baseConfigurationReference = 1C0B5327E140A4BEC6AF315B /* Pods-Unmissable.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -383,7 +383,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4E8B4372B54A30298E6BE300 /* Pods-Unmissable.release.xcconfig */;
+			baseConfigurationReference = 3399695BB25277D06FCC34EB /* Pods-Unmissable.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
