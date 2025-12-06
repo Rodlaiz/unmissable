@@ -50,7 +50,12 @@ export const getUserPreferences = async (): Promise<UserPreferences | null> => {
 
 export const saveUserPreferences = async (prefs: UserPreferences): Promise<void> => {
   try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+    // Ensure favorites are always unique (prevents race condition duplicates)
+    const sanitizedPrefs = {
+      ...prefs,
+      favorites: [...new Set(prefs.favorites)],
+    };
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizedPrefs));
   } catch (e) {
     console.error('Failed to save user preferences', e);
   }

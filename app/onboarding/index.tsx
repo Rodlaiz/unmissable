@@ -43,6 +43,13 @@ const CATEGORIES: CategoryOption[] = [
   { id: 'Theater', icon: 'ticket', label: 'Theater' },
 ];
 
+// Popular artists by category for suggestions
+const POPULAR_BY_CATEGORY: Record<Category, string[]> = {
+  Music: ['Taylor Swift', 'Bad Bunny', 'Drake', 'The Weeknd', 'Morgan Wallen', 'Billie Eilish'],
+  Comedy: ['John Mulaney', 'Trevor Noah', 'Nate Bargatze', 'Matt Rife', 'Bert Kreischer'],
+  Theater: ['Wicked', 'Hamilton', 'The Lion King', 'Beetlejuice', 'Six'],
+};
+
 export default function OnboardingScreen() {
   const router = useRouter();
   const { updateUser } = useUser();
@@ -414,68 +421,120 @@ export default function OnboardingScreen() {
     </View>
   );
 
-  const renderFavorites = () => (
-    <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-        <View className="items-center mb-6">
-          <Image source={FAVORITES_ILLUSTRATION} className="w-40 h-40" contentFit="contain" />
-          <Text className="text-2xl font-bold text-gray-900 mt-4">Any favorites?</Text>
-          <Text className="text-gray-500 text-center">Add artists you don't want to miss.</Text>
-        </View>
+  const renderFavorites = () => {
+    const toggleSuggestedFavorite = (name: string) => {
+      if (favorites.includes(name)) {
+        setFavorites(favorites.filter((f) => f !== name));
+      } else {
+        setFavorites([...favorites, name]);
+      }
+    };
 
-        <View className="relative z-10">
-          <View className="flex-row items-center bg-white rounded-xl px-3 py-2.5 border border-gray-200">
-            <Ionicons name="search" size={20} color="#9ca3af" />
-            <TextInput
-              placeholder="Add artists, comedians, or shows..."
-              placeholderTextColor="#9ca3af"
-              className="flex-1 ml-2 text-base text-gray-900"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {isArtistSearching && <ActivityIndicator size="small" color="#9ca3af" />}
+    return (
+      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+          <View className="items-center mb-6">
+            <Image source={FAVORITES_ILLUSTRATION} className="w-40 h-40" contentFit="contain" />
+            <Text className="text-2xl font-bold text-gray-900 mt-4">Any favorites?</Text>
+            <Text className="text-gray-500 text-center">Add artists you don't want to miss.</Text>
           </View>
 
-          {searchQuery.length > 2 && (
-            <View className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-gray-100 overflow-hidden shadow-lg z-20 max-h-48">
-              {isArtistSearching ? (
-                <View className="px-4 py-3">
-                  <Text className="text-gray-400 text-sm">Searching...</Text>
-                </View>
-              ) : suggestions.length > 0 ? (
-                <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
-                  {suggestions.map((item) => (
-                    <TouchableOpacity key={item} onPress={() => addFavorite(item)} className="px-4 py-3 flex-row items-center justify-between border-b border-gray-50">
-                      <Text className="text-gray-700">{item}</Text>
-                      <Text className="text-xs text-primary-600 font-medium">Add</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              ) : (
-                <View className="px-4 py-3">
-                  <Text className="text-gray-400 text-sm">No matches found</Text>
-                </View>
-              )}
+          <View className="relative z-10">
+            <View className="flex-row items-center bg-white rounded-xl px-3 py-2.5 border border-gray-200">
+              <Ionicons name="search" size={20} color="#9ca3af" />
+              <TextInput
+                placeholder="Add artists, comedians, or shows..."
+                placeholderTextColor="#9ca3af"
+                className="flex-1 ml-2 text-base text-gray-900"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {isArtistSearching && <ActivityIndicator size="small" color="#9ca3af" />}
             </View>
-          )}
-        </View>
 
-        <View className="flex-row flex-wrap gap-2 mt-4 min-h-[100px]">
-          {favorites.length === 0 && (
-            <Text className="text-sm text-gray-400 w-full text-center py-4 italic">No favorites added yet. You can skip this.</Text>
-          )}
-          {favorites.map((fav) => (
-            <View key={fav} className="flex-row items-center px-3 py-1.5 rounded-full bg-primary-100">
-              <Text className="text-primary-800 text-sm font-medium">{fav}</Text>
-              <TouchableOpacity onPress={() => removeFavorite(fav)} className="ml-2">
-                <Ionicons name="close" size={12} color={PRIMARY_DARK} />
-              </TouchableOpacity>
+            {searchQuery.length > 2 && (
+              <View className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-gray-100 overflow-hidden shadow-lg z-20 max-h-48">
+                {isArtistSearching ? (
+                  <View className="px-4 py-3">
+                    <Text className="text-gray-400 text-sm">Searching...</Text>
+                  </View>
+                ) : suggestions.length > 0 ? (
+                  <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+                    {suggestions.map((item) => (
+                      <TouchableOpacity key={item} onPress={() => addFavorite(item)} className="px-4 py-3 flex-row items-center justify-between border-b border-gray-50">
+                        <Text className="text-gray-700">{item}</Text>
+                        <Text className="text-xs text-primary-600 font-medium">Add</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <View className="px-4 py-3">
+                    <Text className="text-gray-400 text-sm">No matches found</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+
+          {/* Selected favorites */}
+          {favorites.length > 0 && (
+            <View className="flex-row flex-wrap gap-2 mt-4">
+              {favorites.map((fav) => (
+                <View key={fav} className="flex-row items-center px-3 py-1.5 rounded-full bg-primary-100">
+                  <Text className="text-primary-800 text-sm font-medium">{fav}</Text>
+                  <TouchableOpacity onPress={() => removeFavorite(fav)} className="ml-2">
+                    <Ionicons name="close" size={12} color={PRIMARY_DARK} />
+                  </TouchableOpacity>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
+          )}
+
+          {/* Popular suggestions by category */}
+          <View className="mt-6">
+            {selectedCategories.map((category) => (
+              <View key={category} className="mb-5">
+                <Text className="text-sm font-semibold text-gray-700 mb-3">
+                  Popular in {category}
+                </Text>
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: 8 }}
+                >
+                  {POPULAR_BY_CATEGORY[category].map((artist) => {
+                    const isSelected = favorites.includes(artist);
+                    return (
+                      <TouchableOpacity
+                        key={artist}
+                        onPress={() => toggleSuggestedFavorite(artist)}
+                        className={`
+                          flex-row items-center px-3 py-2 rounded-full border
+                          ${isSelected 
+                            ? 'bg-primary-100 border-primary-300' 
+                            : 'bg-gray-50 border-gray-200'
+                          }
+                        `}
+                      >
+                        {isSelected && (
+                          <Ionicons name="checkmark" size={14} color={PRIMARY} style={{ marginRight: 4 }} />
+                        )}
+                        <Text 
+                          className={`text-sm ${isSelected ? 'text-primary-800 font-medium' : 'text-gray-700'}`}
+                        >
+                          {artist}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  };
 
   const handleEnableNotifications = async () => {
     setRequestingPermission(true);

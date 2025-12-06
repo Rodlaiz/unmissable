@@ -157,9 +157,18 @@ export default function HomeScreen() {
     if (!user || !event.artistName) return;
     const artistName = event.artistName;
     const isFavorited = user.favorites.includes(artistName);
-    const newFavorites = isFavorited
-      ? user.favorites.filter((f) => f !== artistName)
-      : [...user.favorites, artistName];
+    
+    let newFavorites: string[];
+    if (isFavorited) {
+      newFavorites = user.favorites.filter((f) => f !== artistName);
+    } else {
+      // Prevent duplicates by checking again before adding
+      if (!user.favorites.includes(artistName)) {
+        newFavorites = [...user.favorites, artistName];
+      } else {
+        return; // Already favorited, do nothing
+      }
+    }
     updateUser({ ...user, favorites: newFavorites });
   };
 
@@ -309,12 +318,8 @@ export default function HomeScreen() {
     <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
       {/* Header */}
       <View className="bg-white border-b border-gray-100 shadow-sm">
-        <View className="flex-row items-center justify-between h-14 px-4">
-          <View className="w-12" />
+        <View className="flex-row items-center justify-center h-14 px-4">
           <Image source={require('../../assets/images/logo.png')} className="h-8 w-40" contentFit="contain" />
-          <TouchableOpacity className="w-12 items-end">
-            <Ionicons name="notifications-outline" size={22} color="#374151" />
-          </TouchableOpacity>
         </View>
 
         {/* Search */}

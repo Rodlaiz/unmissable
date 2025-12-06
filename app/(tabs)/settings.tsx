@@ -7,15 +7,19 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Linking,
+  AppState,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
 import { useUser } from '../../context/UserContext';
 import { Category } from '../../types';
 import { searchCities, LocationResult } from '../../services/location';
 import { clearUserPreferences } from '../../services/storage';
+import { registerForPushNotificationsAsync } from '../../services/notifications';
 import { PRIMARY } from '../../constants/colors';
 
 const PROFILE_IMAGE = require('../../assets/images/profile-default.png');
@@ -29,6 +33,39 @@ export default function SettingsScreen() {
   const [locSuggestions, setLocSuggestions] = useState<LocationResult[]>([]);
   const [selectedLoc, setSelectedLoc] = useState<LocationResult | null>(null);
   const [isLocSearching, setIsLocSearching] = useState(false);
+  const [systemNotificationsEnabled, setSystemNotificationsEnabled] = useState<boolean | null>(null);
+  const [isRequestingPermission, setIsRequestingPermission] = useState(false);
+
+  // Check system notification permission status
+  const checkNotificationPermission = async () => {
+    const { status } = await Notifications.getPermissionsAsync();
+    const isEnabled = status === 'granted';
+    setSystemNotificationsEnabled(isEnabled);
+    
+    // Sync app state with system state
+    if (user && user.notifications?.enabled !== isEnabled) {
+      updateUser({
+        ...user,
+        notifications: {
+          ...user.notifications!,
+          enabled: isEnabled,
+        },
+      });
+    }
+  };
+
+  // Check permission on mount and when app comes to foreground
+  useEffect(() => {
+    checkNotificationPermission();
+    
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        checkNotificationPermission();
+      }
+    });
+    
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
@@ -44,15 +81,83 @@ export default function SettingsScreen() {
     return () => clearTimeout(delayDebounceFn);
   }, [locQuery, isEditingLocation, selectedLoc]);
 
-  const toggleNotifications = () => {
+  const toggleNotifications = async () => {
     if (!user) return;
-    updateUser({
-      ...user,
-      notifications: {
-        ...user.notifications!,
-        enabled: !user.notifications?.enabled,
-      },
-    });
+    
+    const currentlyEnabled = user.notifications?.enabled;
+    
+    if (!currentlyEnabled) {
+      // User wants to enable notifications - request permission
+      setIsRequestingPermission(true);
+      try {
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        
+        if (existingStatus === 'denied') {
+          // Permission was previously denied, need to go to settings
+          Alert.alert(
+            'Notifications Disabled',
+            'You previously denied notification permissions. Please enable them in your device settings.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            ]
+          );
+          return;
+        }
+        
+        // Request permission
+        await registerForPushNotificationsAsync();
+        const { status } = await Notifications.getPermissionsAsync();
+        const granted = status === 'granted';
+        
+        setSystemNotificationsEnabled(granted);
+        updateUser({
+          ...user,
+          notifications: {
+            ...user.notifications!,
+            enabled: granted,
+          },
+        });
+        
+        if (!granted) {
+          Alert.alert(
+            'Permission Required',
+            'To receive notifications about your favorite artists, please enable notifications in your device settings.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            ]
+          );
+        }
+      } finally {
+        setIsRequestingPermission(false);
+      }
+    } else {
+      // User wants to disable - we can't revoke permission, but we can disable in-app
+      Alert.alert(
+        'Disable Notifications',
+        'To fully disable notifications, you need to turn them off in your device settings. Do you want to open settings?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Open Settings', 
+            onPress: () => Linking.openSettings() 
+          },
+          {
+            text: 'Disable In-App Only',
+            onPress: () => {
+              updateUser({
+                ...user,
+                notifications: {
+                  ...user.notifications!,
+                  enabled: false,
+                },
+              });
+            },
+          },
+        ]
+      );
+    }
   };
 
   const toggleCategory = (cat: Category) => {
@@ -183,20 +288,32 @@ export default function SettingsScreen() {
         {/* Push Notifications Card */}
         <TouchableOpacity
           onPress={toggleNotifications}
-          className="bg-white rounded-2xl p-4 shadow-sm flex-row items-center justify-between mb-4"
+          disabled={isRequestingPermission}
+          className="bg-white rounded-2xl p-4 shadow-sm mb-4"
         >
-          <Text className="font-medium text-gray-900">Enable Push Notifications</Text>
-          <View
-            className={`w-12 h-7 rounded-full flex-row items-center p-1 ${
-              user.notifications?.enabled ? 'bg-primary-600' : 'bg-gray-300'
-            }`}
-          >
-            <View
-              className={`bg-white w-5 h-5 rounded-full shadow-md ${
-                user.notifications?.enabled ? 'ml-5' : 'ml-0'
-              }`}
-            />
+          <View className="flex-row items-center justify-between">
+            <Text className="font-medium text-gray-900">Enable Push Notifications</Text>
+            {isRequestingPermission ? (
+              <ActivityIndicator size="small" color={PRIMARY} />
+            ) : (
+              <View
+                className={`w-12 h-7 rounded-full flex-row items-center p-1 ${
+                  user.notifications?.enabled ? 'bg-primary-600' : 'bg-gray-300'
+                }`}
+              >
+                <View
+                  className={`bg-white w-5 h-5 rounded-full shadow-md ${
+                    user.notifications?.enabled ? 'ml-5' : 'ml-0'
+                  }`}
+                />
+              </View>
+            )}
           </View>
+          {systemNotificationsEnabled === false && user.notifications?.enabled && (
+            <Text className="text-xs text-orange-600 mt-2">
+              ⚠️ Notifications are disabled in system settings
+            </Text>
+          )}
         </TouchableOpacity>
 
         {/* Detailed Notifications */}

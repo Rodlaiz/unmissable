@@ -33,9 +33,20 @@ export default function EventDetailScreen() {
 
   const toggleFollow = () => {
     if (!user || !event?.artistName) return;
-    const newFavorites = isFollowing
-      ? user.favorites.filter((f) => f !== event.artistName)
-      : [...user.favorites, event.artistName];
+    const artistName = event.artistName;
+    const alreadyFollowing = user.favorites.includes(artistName);
+    
+    let newFavorites: string[];
+    if (alreadyFollowing) {
+      newFavorites = user.favorites.filter((f) => f !== artistName);
+    } else {
+      // Prevent duplicates by checking again before adding
+      if (!user.favorites.includes(artistName)) {
+        newFavorites = [...user.favorites, artistName];
+      } else {
+        return; // Already following, do nothing
+      }
+    }
     updateUser({ ...user, favorites: newFavorites });
   };
 

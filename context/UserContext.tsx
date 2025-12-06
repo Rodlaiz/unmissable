@@ -124,8 +124,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateUser = async (prefs: UserPreferences) => {
-    await saveUserPreferences(prefs);
-    setUser(prefs);
+    // Ensure favorites are always unique before saving (prevents race condition duplicates)
+    const sanitizedPrefs = {
+      ...prefs,
+      favorites: [...new Set(prefs.favorites)],
+    };
+    await saveUserPreferences(sanitizedPrefs);
+    setUser(sanitizedPrefs);
   };
 
   const handleSignIn = async (email: string, password: string): Promise<AuthResult> => {
