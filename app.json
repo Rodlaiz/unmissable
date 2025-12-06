@@ -32,11 +32,7 @@
         "ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
-      ],
-      "navigationBar": {
-        "visible": "sticky",
-        "backgroundColor": "#ffffff"
-      }
+      ]
     },
     "web": {
       "bundler": "metro",

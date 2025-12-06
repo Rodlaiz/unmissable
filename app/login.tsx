@@ -229,8 +229,10 @@ export default function LoginScreen() {
               }
               
               if (data.session?.user) {
-                // Sync user profile to Supabase users table
-                await syncUserProfile(data.session.user);
+                // Sync user profile to Supabase users table (in background)
+                syncUserProfile(data.session.user).catch(err => {
+                  console.error('Failed to sync user profile:', err);
+                });
                 await handleAuthSuccess();
                 return;
               }

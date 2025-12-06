@@ -72,8 +72,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setAuthUser(mappedUser);
         
         // Sync user profile to Supabase users table (for OAuth providers like Google)
+        // Do this in the background, don't block the UI
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          await syncUserProfile(session.user);
+          syncUserProfile(session.user).catch(err => {
+            console.error('Failed to sync user profile:', err);
+          });
         }
         
         // Update user preferences with auth info if needed
@@ -174,8 +177,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const mappedUser = mapSupabaseUser(result.user);
       setAuthUser(mappedUser);
       
-      // Sync user profile to Supabase users table
-      await syncUserProfile(result.user);
+      // Sync user profile to Supabase users table (in background)
+      syncUserProfile(result.user).catch(err => {
+        console.error('Failed to sync user profile:', err);
+      });
       
       // Update or create preferences
       const basePrefs = user || defaultPreferences;
@@ -199,8 +204,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const mappedUser = mapSupabaseUser(result.user);
       setAuthUser(mappedUser);
       
-      // Sync user profile to Supabase users table
-      await syncUserProfile(result.user);
+      // Sync user profile to Supabase users table (in background)
+      syncUserProfile(result.user).catch(err => {
+        console.error('Failed to sync user profile:', err);
+      });
       
       // Update or create preferences
       const basePrefs = user || defaultPreferences;
@@ -224,8 +231,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const mappedUser = mapSupabaseUser(result.user);
       setAuthUser(mappedUser);
       
-      // Sync user profile to Supabase users table
-      await syncUserProfile(result.user);
+      // Sync user profile to Supabase users table (in background)
+      syncUserProfile(result.user).catch(err => {
+        console.error('Failed to sync user profile:', err);
+      });
       
       // Update or create preferences
       const basePrefs = user || defaultPreferences;

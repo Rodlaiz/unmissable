@@ -26,8 +26,10 @@ export default function AuthCallbackScreen() {
         }
 
         if (session?.user) {
-          // Sync user profile to Supabase users table
-          await syncUserProfile(session.user);
+          // Sync user profile to Supabase users table (in background)
+          syncUserProfile(session.user).catch(err => {
+            console.error('Failed to sync user profile:', err);
+          });
           setIsProcessing(false);
         } else {
           // No session, redirect to login
