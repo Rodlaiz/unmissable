@@ -226,6 +226,36 @@ export const resetPassword = async (email: string): Promise<AuthResult> => {
   }
 };
 
+// Sync user profile to users table (call after successful auth)
+export const syncUserProfile = async (user: User): Promise<void> => {
+  try {
+    const email = user.email || null;
+    const displayName = user.user_metadata?.full_name || 
+                        user.user_metadata?.name || 
+                        user.user_metadata?.display_name || 
+                        null;
+
+    const { error } = await supabase
+      .from('users')
+      .upsert(
+        {
+          id: user.id,
+          email: email,
+          display_name: displayName,
+        },
+        { onConflict: 'id' }
+      );
+
+    if (error) {
+      console.error('Failed to sync user profile to Supabase:', error.message);
+    } else {
+      console.log('User profile synced to Supabase successfully');
+    }
+  } catch (error) {
+    console.error('Error syncing user profile:', error);
+  }
+};
+
 // Sign Out
 export const signOut = async (): Promise<AuthResult> => {
   try {

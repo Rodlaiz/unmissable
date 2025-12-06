@@ -12,6 +12,7 @@ import {
   resetPassword,
   getCurrentSession,
   onAuthStateChange,
+  syncUserProfile,
   AuthResult,
 } from '../services/supabase';
 
@@ -69,6 +70,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (session?.user) {
         const mappedUser = mapSupabaseUser(session.user);
         setAuthUser(mappedUser);
+        
+        // Sync user profile to Supabase users table (for OAuth providers like Google)
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          await syncUserProfile(session.user);
+        }
         
         // Update user preferences with auth info if needed
         if (user && mappedUser) {
@@ -168,6 +174,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const mappedUser = mapSupabaseUser(result.user);
       setAuthUser(mappedUser);
       
+      // Sync user profile to Supabase users table
+      await syncUserProfile(result.user);
+      
       // Update or create preferences
       const basePrefs = user || defaultPreferences;
       const updatedPrefs: UserPreferences = {
@@ -190,6 +199,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const mappedUser = mapSupabaseUser(result.user);
       setAuthUser(mappedUser);
       
+      // Sync user profile to Supabase users table
+      await syncUserProfile(result.user);
+      
       // Update or create preferences
       const basePrefs = user || defaultPreferences;
       const updatedPrefs: UserPreferences = {
@@ -211,6 +223,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (result.success && result.user) {
       const mappedUser = mapSupabaseUser(result.user);
       setAuthUser(mappedUser);
+      
+      // Sync user profile to Supabase users table
+      await syncUserProfile(result.user);
       
       // Update or create preferences
       const basePrefs = user || defaultPreferences;

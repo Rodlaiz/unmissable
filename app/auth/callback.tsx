@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, Text } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../../services/supabase';
+import { supabase, syncUserProfile } from '../../services/supabase';
 import { useUser } from '../../context/UserContext';
 import { PRIMARY } from '../../constants/colors';
 
@@ -25,7 +25,9 @@ export default function AuthCallbackScreen() {
           return;
         }
 
-        if (session) {
+        if (session?.user) {
+          // Sync user profile to Supabase users table
+          await syncUserProfile(session.user);
           setIsProcessing(false);
         } else {
           // No session, redirect to login

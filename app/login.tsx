@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { useUser } from '../context/UserContext';
 import { registerForPushNotificationsAsync } from '../services/notifications';
-import { supabase } from '../services/supabase';
+import { supabase, syncUserProfile } from '../services/supabase';
 import Button from '../components/Button';
 import Input from '../components/Input';
 
@@ -228,7 +228,9 @@ export default function LoginScreen() {
                 return;
               }
               
-              if (data.session) {
+              if (data.session?.user) {
+                // Sync user profile to Supabase users table
+                await syncUserProfile(data.session.user);
                 await handleAuthSuccess();
                 return;
               }

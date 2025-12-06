@@ -7,8 +7,14 @@ import { supabase } from '../services/supabase';
  * Should be called after the user is authenticated.
  * 
  * @param userId - The authenticated user's ID, or null/undefined if not authenticated
+ * @param userEmail - The authenticated user's email (optional, helps create user row if needed)
+ * @param displayName - The authenticated user's display name (optional)
  */
-export function usePushNotifications(userId: string | null | undefined): void {
+export function usePushNotifications(
+  userId: string | null | undefined,
+  userEmail?: string | null,
+  displayName?: string | null
+): void {
   const hasRegistered = useRef(false);
 
   useEffect(() => {
@@ -28,13 +34,24 @@ export function usePushNotifications(userId: string | null | undefined): void {
           return;
         }
 
+        // Build the upsert data with optional email and display_name
+        const upsertData: Record<string, string | null> = {
+          id: userId,
+          push_token: token,
+        };
+        
+        // Include email and display_name if available (helps create row if it doesn't exist)
+        if (userEmail) {
+          upsertData.email = userEmail;
+        }
+        if (displayName) {
+          upsertData.display_name = displayName;
+        }
+
         // Save the token to Supabase users table
         const { error } = await supabase
           .from('users')
-          .upsert(
-            { id: userId, push_token: token },
-            { onConflict: 'id' }
-          );
+          .upsert(upsertData, { onConflict: 'id' });
 
         if (error) {
           console.error('Failed to save push token to Supabase:', error.message);
@@ -50,5 +67,5 @@ export function usePushNotifications(userId: string | null | undefined): void {
     };
 
     registerToken();
-  }, [userId]);
+  }, [userId, userEmail, displayName]);
 }

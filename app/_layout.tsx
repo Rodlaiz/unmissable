@@ -13,7 +13,7 @@ function RootLayoutNav() {
   const { user, authUser, isLoading } = useUser();
 
   // Register for push notifications when user is authenticated
-  usePushNotifications(authUser?.id);
+  usePushNotifications(authUser?.id, authUser?.email, authUser?.displayName);
 
   // Hide Android navigation bar
   useEffect(() => {
