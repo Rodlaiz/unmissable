@@ -24,7 +24,7 @@ export default function EventDetailScreen() {
   const { id, fromArtist } = useLocalSearchParams<{ id: string; fromArtist?: string }>();
   const router = useRouter();
   const hideArtistSection = fromArtist === 'true';
-  const { user, updateUser } = useUser();
+  const { user, authUser, updateUser } = useUser();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [resaleOptions, setResaleOptions] = useState<ResaleOption[]>([]);
@@ -108,7 +108,6 @@ export default function EventDetailScreen() {
   const openTickets = async () => {
     if (event?.ticketUrl) {
       // Track ticket intent in Supabase
-      const authUser = user?.authUser;
       if (authUser && !user?.isGuest) {
         trackTicketIntent(authUser.id, event.id, event.name, event.ticketUrl).catch((err) => {
           console.error('Failed to track ticket intent:', err);
@@ -120,7 +119,6 @@ export default function EventDetailScreen() {
 
   const openResale = async (url: string) => {
     // Track resale ticket intent in Supabase
-    const authUser = user?.authUser;
     if (authUser && !user?.isGuest && event) {
       trackTicketIntent(authUser.id, event.id, `${event.name} (Resale)`, url).catch((err) => {
         console.error('Failed to track resale ticket intent:', err);

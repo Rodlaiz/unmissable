@@ -42,7 +42,7 @@ export default function ArtistDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const artistName = decodeURIComponent(id || '');
   const router = useRouter();
-  const { user, updateUser } = useUser();
+  const { user, authUser, updateUser } = useUser();
 
   const [profile, setProfile] = useState<ArtistFullProfile | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
@@ -189,7 +189,6 @@ export default function ArtistDetailScreen() {
     // For available events, open ticket URL directly
     if (event.ticketUrl) {
       // Track ticket intent in Supabase
-      const authUser = user?.authUser;
       if (authUser && !user?.isGuest) {
         trackTicketIntent(authUser.id, event.id, event.name, event.ticketUrl).catch((err) => {
           console.error('Failed to track ticket intent:', err);
