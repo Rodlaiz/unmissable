@@ -1,8 +1,9 @@
 import 'react-native-url-polyfill/auto';
-import { createClient, AuthChangeEvent, Session, User } from '@supabase/supabase-js';
+import { createClient, AuthChangeEvent, Session, User, SupabaseClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 // SecureStore adapter for Supabase auth persistence
 const ExpoSecureStoreAdapter = {
@@ -30,22 +31,62 @@ const ExpoSecureStoreAdapter = {
   },
 };
 
-// Initialize Supabase client
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+// Helper to get config values - checks process.env first, then Constants.expoConfig.extra
+const getConfigValue = (envKey: string, extraKey: string): string => {
+  // Check process.env first (works in dev and EAS builds)
+  const envValue = process.env[envKey];
+  if (envValue) return envValue;
+  
+  // Fallback to Constants.expoConfig.extra (embedded at build time)
+  const extraValue = Constants.expoConfig?.extra?.[extraKey];
+  if (extraValue) return extraValue;
+  
+  return '';
+};
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    'Supabase credentials not found. Please set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in your .env file.'
-  );
-}
+// Lazy initialization of Supabase client
+let _supabaseInstance: SupabaseClient | null = null;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: ExpoSecureStoreAdapter,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
+const getSupabaseClient = (): SupabaseClient => {
+  if (_supabaseInstance) {
+    return _supabaseInstance;
+  }
+
+  const supabaseUrl = getConfigValue('EXPO_PUBLIC_SUPABASE_URL', 'supabaseUrl');
+  const supabaseAnonKey = getConfigValue('EXPO_PUBLIC_SUPABASE_ANON_KEY', 'supabaseAnonKey');
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Supabase configuration:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseAnonKey,
+      expoConfig: Constants.expoConfig?.extra,
+    });
+    throw new Error(
+      'Supabase credentials not found. Please set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in your .env file.'
+    );
+  }
+
+  _supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      storage: ExpoSecureStoreAdapter,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+    },
+  });
+
+  return _supabaseInstance;
+};
+
+// Export a proxy that lazily initializes the client
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_, prop) {
+    const client = getSupabaseClient();
+    const value = (client as any)[prop];
+    if (typeof value === 'function') {
+      return value.bind(client);
+    }
+    return value;
   },
 });
 
@@ -325,4 +366,142 @@ export const onAuthStateChange = (
   callback: (event: AuthChangeEvent, session: Session | null) => void
 ) => {
   return supabase.auth.onAuthStateChange(callback);
+};
+
+// ============================================
+// User Artists Sync Functions
+// ============================================
+
+export interface UserArtist {
+  user_id: string;
+  artist_id: string;
+  artist_name: string;
+}
+
+// Add an artist to user's favorites in Supabase
+export const syncUserArtist = async (
+  userId: string,
+  artistId: string,
+  artistName: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const { error } = await supabase
+      .from('user_artists')
+      .upsert(
+        {
+          user_id: userId,
+          artist_id: artistId,
+          artist_name: artistName,
+        },
+        { onConflict: 'user_id,artist_id' }
+      );
+
+    if (error) {
+      console.error('Failed to sync user artist:', error.message);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`Synced artist ${artistName} (${artistId}) for user ${userId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error syncing user artist:', error);
+    return { success: false, error: 'Failed to sync artist' };
+  }
+};
+
+// Remove an artist from user's favorites in Supabase
+export const removeUserArtist = async (
+  userId: string,
+  artistId: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const { error } = await supabase
+      .from('user_artists')
+      .delete()
+      .eq('user_id', userId)
+      .eq('artist_id', artistId);
+
+    if (error) {
+      console.error('Failed to remove user artist:', error.message);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`Removed artist ${artistId} for user ${userId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error removing user artist:', error);
+    return { success: false, error: 'Failed to remove artist' };
+  }
+};
+
+// Bulk sync all user artists (useful on sign-in to sync local favorites)
+export const syncAllUserArtists = async (
+  userId: string,
+  artists: Array<{ artistId: string; artistName: string }>
+): Promise<{ success: boolean; error?: string }> => {
+  if (artists.length === 0) return { success: true };
+
+  try {
+    const records = artists.map((artist) => ({
+      user_id: userId,
+      artist_id: artist.artistId,
+      artist_name: artist.artistName,
+    }));
+
+    const { error } = await supabase
+      .from('user_artists')
+      .upsert(records, { onConflict: 'user_id,artist_id' });
+
+    if (error) {
+      console.error('Failed to bulk sync user artists:', error.message);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`Bulk synced ${artists.length} artists for user ${userId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error bulk syncing user artists:', error);
+    return { success: false, error: 'Failed to sync artists' };
+  }
+};
+
+// ============================================
+// Ticket Intent Tracking Functions
+// ============================================
+
+export interface TicketIntent {
+  user_id: string;
+  event_id: string;
+  event_name: string;
+  ticket_url: string;
+}
+
+// Track when a user clicks to buy tickets
+export const trackTicketIntent = async (
+  userId: string,
+  eventId: string,
+  eventName: string,
+  ticketUrl: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const { error } = await supabase
+      .from('ticket_intents')
+      .insert({
+        user_id: userId,
+        event_id: eventId,
+        event_name: eventName,
+        ticket_url: ticketUrl,
+      });
+
+    if (error) {
+      console.error('Failed to track ticket intent:', error.message);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`Tracked ticket intent for event ${eventName} (${eventId})`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error tracking ticket intent:', error);
+    return { success: false, error: 'Failed to track ticket intent' };
+  }
 };

@@ -1,6 +1,7 @@
 import { Event, Category, EventStatus } from '../types';
+import Constants from 'expo-constants';
 
-const API_KEY = process.env.EXPO_PUBLIC_TICKETMASTER_API_KEY || '';
+const API_KEY = process.env.EXPO_PUBLIC_TICKETMASTER_API_KEY || Constants.expoConfig?.extra?.ticketmasterApiKey || '';
 const BASE_URL = 'https://app.ticketmaster.com/discovery/v2';
 
 if (!API_KEY) {

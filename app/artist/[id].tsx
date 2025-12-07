@@ -17,6 +17,7 @@ import { Event } from '../../types';
 import { getArtistDetails, searchEvents } from '../../services/ticketmaster';
 import { getArtistBio } from '../../services/wikipedia';
 import { getArtistDiscography } from '../../services/theaudiodb';
+import { syncUserArtist, removeUserArtist, trackTicketIntent } from '../../services/supabase';
 import Button from '../../components/Button';
 import { PRIMARY } from '../../constants/colors';
 import { normalizeString } from '../../utils/formatters';
@@ -138,7 +139,7 @@ export default function ArtistDetailScreen() {
     };
   }, [artistName, user?.location]);
 
-  const toggleFollow = () => {
+  const toggleFollow = async () => {
     if (!user) return;
     let newFavorites: string[];
     const alreadyFollowing = user.favorites.includes(artistName);
@@ -157,6 +158,22 @@ export default function ArtistDetailScreen() {
       favorites: newFavorites,
     });
     setIsFollowing(!alreadyFollowing);
+
+    // Sync to Supabase if user is authenticated and we have a valid artist ID
+    const authUser = user.authUser;
+    if (authUser && !user.isGuest && profile && isValidArtist) {
+      if (alreadyFollowing) {
+        // Remove from Supabase
+        removeUserArtist(authUser.id, profile.id).catch((err) => {
+          console.error('Failed to remove artist from Supabase:', err);
+        });
+      } else {
+        // Add to Supabase
+        syncUserArtist(authUser.id, profile.id, artistName).catch((err) => {
+          console.error('Failed to sync artist to Supabase:', err);
+        });
+      }
+    }
   };
 
   const handleEventPress = async (event: Event) => {
@@ -171,6 +188,13 @@ export default function ArtistDetailScreen() {
     }
     // For available events, open ticket URL directly
     if (event.ticketUrl) {
+      // Track ticket intent in Supabase
+      const authUser = user?.authUser;
+      if (authUser && !user?.isGuest) {
+        trackTicketIntent(authUser.id, event.id, event.name, event.ticketUrl).catch((err) => {
+          console.error('Failed to track ticket intent:', err);
+        });
+      }
       await WebBrowser.openBrowserAsync(event.ticketUrl);
     }
   };

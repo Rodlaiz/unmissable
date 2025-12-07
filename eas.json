@@ -4,14 +4,26 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "base": {
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://smkhrbgsnmeabatmheyx.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNta2hyYmdzbm1lYWJhdG1oZXl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzY0MjMsImV4cCI6MjA4MDQ1MjQyM30.vV3rudLXnLV00BZMwLUozw2NZ9OQRQ27roukL2C6FME",
+        "EXPO_PUBLIC_TICKETMASTER_API_KEY": "NArokwjnM4PG4VfkzFI2BVoszjAF58hd",
+        "EXPO_PUBLIC_SEATGEEK_CLIENT_ID": "MjE4OTQ1ODl8MTYxODk0NzU0NS4wMDkyODAz",
+        "EXPO_PUBLIC_EXPO_PROJECT_ID": "158b0bb9-9911-4953-abe8-65ce015bbf0d"
+      }
+    },
     "development": {
+      "extends": "base",
       "developmentClient": true,
       "distribution": "internal"
     },
     "preview": {
+      "extends": "base",
       "distribution": "internal"
     },
     "production": {
+      "extends": "base",
       "autoIncrement": true
     }
   },

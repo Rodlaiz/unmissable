@@ -13,8 +13,10 @@ import {
   getCurrentSession,
   onAuthStateChange,
   syncUserProfile,
+  syncAllUserArtists,
   AuthResult,
 } from '../services/supabase';
+import { getArtistDetails } from '../services/ticketmaster';
 
 interface UserContextType {
   user: UserPreferences | null;
@@ -168,6 +170,38 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Helper function to sync local favorites to Supabase user_artists table
+  const syncFavoritesToSupabase = async (userId: string, favorites: string[]) => {
+    if (favorites.length === 0) return;
+
+    try {
+      // Fetch artist IDs for all favorites in parallel
+      const artistPromises = favorites.map(async (artistName) => {
+        try {
+          const details = await getArtistDetails(artistName);
+          if (details && !details.id.startsWith('mock-')) {
+            return { artistId: details.id, artistName };
+          }
+          return null;
+        } catch (err) {
+          console.error(`Failed to get artist details for ${artistName}:`, err);
+          return null;
+        }
+      });
+
+      const artists = (await Promise.all(artistPromises)).filter(
+        (a): a is { artistId: string; artistName: string } => a !== null
+      );
+
+      if (artists.length > 0) {
+        await syncAllUserArtists(userId, artists);
+        console.log(`Synced ${artists.length} favorites to Supabase`);
+      }
+    } catch (error) {
+      console.error('Error syncing favorites to Supabase:', error);
+    }
+  };
+
   const handleSignIn = async (email: string, password: string): Promise<AuthResult> => {
     const result = await signInWithEmail(email, password);
     
@@ -190,6 +224,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       };
       await saveUserPreferences(updatedPrefs);
       setUser(updatedPrefs);
+
+      // Sync existing favorites to Supabase user_artists table (in background)
+      if (basePrefs.favorites.length > 0) {
+        syncFavoritesToSupabase(result.user.id, basePrefs.favorites).catch(err => {
+          console.error('Failed to sync favorites:', err);
+        });
+      }
     }
     
     return result;
@@ -217,6 +258,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       };
       await saveUserPreferences(updatedPrefs);
       setUser(updatedPrefs);
+
+      // Sync existing favorites to Supabase user_artists table (in background)
+      if (basePrefs.favorites.length > 0) {
+        syncFavoritesToSupabase(result.user.id, basePrefs.favorites).catch(err => {
+          console.error('Failed to sync favorites:', err);
+        });
+      }
     }
     
     return result;
@@ -244,6 +292,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       };
       await saveUserPreferences(updatedPrefs);
       setUser(updatedPrefs);
+
+      // Sync existing favorites to Supabase user_artists table (in background)
+      if (basePrefs.favorites.length > 0) {
+        syncFavoritesToSupabase(result.user.id, basePrefs.favorites).catch(err => {
+          console.error('Failed to sync favorites:', err);
+        });
+      }
     }
     
     return result;

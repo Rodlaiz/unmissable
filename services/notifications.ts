@@ -48,7 +48,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     }
 
     try {
-      const projectId = process.env.EXPO_PUBLIC_EXPO_PROJECT_ID;
+      const projectId = process.env.EXPO_PUBLIC_EXPO_PROJECT_ID || Constants.expoConfig?.extra?.expoProjectId;
       if (!projectId) {
         console.warn('EXPO_PUBLIC_EXPO_PROJECT_ID is not set. Push notifications will not work.');
         return null;

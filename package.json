@@ -13,7 +13,6 @@
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.86.2",
-    "dotenv": "^17.2.3",
     "expo": "^54.0.0",
     "expo-apple-authentication": "^8.0.8",
     "expo-constants": "~18.0.11",
@@ -41,6 +40,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~19.1.10",
+    "dotenv": "^17.2.3",
     "tailwindcss": "3.3.2",
     "typescript": "^5.3.0"
   },

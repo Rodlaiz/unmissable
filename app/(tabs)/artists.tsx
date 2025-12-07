@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '../../context/UserContext';
 import { ArtistProfile, Event } from '../../types';
 import { getArtistDetails, searchEvents, searchAttractions } from '../../services/ticketmaster';
+import { syncUserArtist } from '../../services/supabase';
 import Card from '../../components/Card';
 import { PRIMARY } from '../../constants/colors';
 import { normalizeString, formatDateTime } from '../../utils/formatters';
@@ -146,7 +147,7 @@ export default function ArtistsScreen() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, user?.favorites]);
 
-  const handleAddArtist = (artistName: string) => {
+  const handleAddArtist = async (artistName: string) => {
     if (user && !user.favorites.includes(artistName)) {
       updateUser({
         ...user,
@@ -154,6 +155,22 @@ export default function ArtistsScreen() {
       });
       setSearchQuery('');
       setApiSuggestions([]);
+
+      // Sync to Supabase if user is authenticated
+      const authUser = user.authUser;
+      if (authUser && !user.isGuest) {
+        // Get artist ID from Ticketmaster
+        try {
+          const artistDetails = await getArtistDetails(artistName);
+          if (artistDetails && !artistDetails.id.startsWith('mock-')) {
+            syncUserArtist(authUser.id, artistDetails.id, artistName).catch((err) => {
+              console.error('Failed to sync artist to Supabase:', err);
+            });
+          }
+        } catch (err) {
+          console.error('Failed to get artist details for sync:', err);
+        }
+      }
     }
   };
 

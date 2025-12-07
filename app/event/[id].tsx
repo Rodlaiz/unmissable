@@ -13,8 +13,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Event } from '../../types';
 import { useUser } from '../../context/UserContext';
-import { getEventById } from '../../services/ticketmaster';
+import { getEventById, getArtistDetails } from '../../services/ticketmaster';
 import { getResaleOptions, ResaleOption } from '../../services/resale';
+import { syncUserArtist, removeUserArtist, trackTicketIntent } from '../../services/supabase';
 import Button from '../../components/Button';
 import { PRIMARY } from '../../constants/colors';
 import { formatFullDate } from '../../utils/formatters';
@@ -28,10 +29,11 @@ export default function EventDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [resaleOptions, setResaleOptions] = useState<ResaleOption[]>([]);
   const [loadingResale, setLoadingResale] = useState(false);
+  const [artistId, setArtistId] = useState<string | null>(null);
 
   const isFollowing = event?.artistName ? user?.favorites.includes(event.artistName) : false;
 
-  const toggleFollow = () => {
+  const toggleFollow = async () => {
     if (!user || !event?.artistName) return;
     const artistName = event.artistName;
     const alreadyFollowing = user.favorites.includes(artistName);
@@ -48,6 +50,20 @@ export default function EventDetailScreen() {
       }
     }
     updateUser({ ...user, favorites: newFavorites });
+
+    // Sync to Supabase if user is authenticated and we have artist ID
+    const authUser = user.authUser;
+    if (authUser && !user.isGuest && artistId && !artistId.startsWith('mock-')) {
+      if (alreadyFollowing) {
+        removeUserArtist(authUser.id, artistId).catch((err) => {
+          console.error('Failed to remove artist from Supabase:', err);
+        });
+      } else {
+        syncUserArtist(authUser.id, artistId, artistName).catch((err) => {
+          console.error('Failed to sync artist to Supabase:', err);
+        });
+      }
+    }
   };
 
   useEffect(() => {
@@ -57,6 +73,18 @@ export default function EventDetailScreen() {
       const data = await getEventById(id);
       setEvent(data);
       setLoading(false);
+
+      // Fetch artist details to get the artist ID for syncing
+      if (data?.artistName) {
+        try {
+          const artistDetails = await getArtistDetails(data.artistName);
+          if (artistDetails && !artistDetails.id.startsWith('mock-')) {
+            setArtistId(artistDetails.id);
+          }
+        } catch (err) {
+          console.error('Failed to fetch artist details:', err);
+        }
+      }
 
       if (data && data.availability === 'SOLD_OUT') {
         setLoadingResale(true);
@@ -79,11 +107,25 @@ export default function EventDetailScreen() {
 
   const openTickets = async () => {
     if (event?.ticketUrl) {
+      // Track ticket intent in Supabase
+      const authUser = user?.authUser;
+      if (authUser && !user?.isGuest) {
+        trackTicketIntent(authUser.id, event.id, event.name, event.ticketUrl).catch((err) => {
+          console.error('Failed to track ticket intent:', err);
+        });
+      }
       await WebBrowser.openBrowserAsync(event.ticketUrl);
     }
   };
 
   const openResale = async (url: string) => {
+    // Track resale ticket intent in Supabase
+    const authUser = user?.authUser;
+    if (authUser && !user?.isGuest && event) {
+      trackTicketIntent(authUser.id, event.id, `${event.name} (Resale)`, url).catch((err) => {
+        console.error('Failed to track resale ticket intent:', err);
+      });
+    }
     await WebBrowser.openBrowserAsync(url);
   };
 

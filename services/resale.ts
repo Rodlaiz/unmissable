@@ -1,4 +1,5 @@
 import { Event } from '../types';
+import Constants from 'expo-constants';
 
 export interface ResaleOption {
   source: 'SeatGeek' | 'StubHub' | 'Viagogo';
@@ -10,7 +11,7 @@ export interface ResaleOption {
   logoColor?: string;
 }
 
-const SEATGEEK_CLIENT_ID = process.env.EXPO_PUBLIC_SEATGEEK_CLIENT_ID || '';
+const SEATGEEK_CLIENT_ID = process.env.EXPO_PUBLIC_SEATGEEK_CLIENT_ID || Constants.expoConfig?.extra?.seatgeekClientId || '';
 
 export const getResaleOptions = async (event: Event): Promise<ResaleOption[]> => {
   const options: ResaleOption[] = [];
