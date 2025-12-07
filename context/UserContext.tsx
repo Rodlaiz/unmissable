@@ -138,6 +138,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const updateUser = async (prefs: UserPreferences) => {
     // Get the previous favorites to detect changes
     const previousFavorites = user?.favorites || [];
+    // Detect if this is onboarding completion (first time setting up favorites)
+    const isOnboardingCompletion = prefs.hasOnboarded && !user?.hasOnboarded;
     
     // Ensure favorites are always unique before saving (prevents race condition duplicates)
     const sanitizedPrefs = {
@@ -175,39 +177,54 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Sync favorites to Supabase if user is authenticated and favorites changed
     if (currentAuthUser && !sanitizedPrefs.isGuest) {
-      const newFavorites = sanitizedPrefs.favorites.filter(f => !previousFavorites.includes(f));
-      const removedFavorites = previousFavorites.filter(f => !sanitizedPrefs.favorites.includes(f));
-      
-      if (newFavorites.length > 0) {
-        // New favorites were added - sync them to Supabase
-        syncFavoritesToSupabase(currentAuthUser.id, newFavorites).catch(err => {
-          console.error('Failed to sync new favorites:', err);
+      // If onboarding just completed, replace all artists in Supabase
+      if (isOnboardingCompletion) {
+        syncFavoritesToSupabase(currentAuthUser.id, sanitizedPrefs.favorites, true).catch(err => {
+          console.error('Failed to sync favorites on onboarding completion:', err);
         });
-      }
-      
-      if (removedFavorites.length > 0) {
-        // Favorites were removed - remove them from Supabase
-        removedFavorites.forEach(artistName => {
-          // We need to get the artist ID to remove - fetch it first
-          getArtistDetails(artistName).then(details => {
-            if (details && !details.id.startsWith('mock-')) {
-              removeUserArtist(currentAuthUser.id, details.id).catch(err => {
-                console.error(`Failed to remove artist ${artistName} from Supabase:`, err);
-              });
-            }
-          }).catch(err => {
-            console.error(`Failed to get artist details for removal ${artistName}:`, err);
+      } else {
+        // Normal incremental sync
+        const newFavorites = sanitizedPrefs.favorites.filter(f => !previousFavorites.includes(f));
+        const removedFavorites = previousFavorites.filter(f => !sanitizedPrefs.favorites.includes(f));
+        
+        if (newFavorites.length > 0) {
+          // New favorites were added - sync them to Supabase
+          syncFavoritesToSupabase(currentAuthUser.id, newFavorites).catch(err => {
+            console.error('Failed to sync new favorites:', err);
           });
-        });
+        }
+        
+        if (removedFavorites.length > 0) {
+          // Favorites were removed - remove them from Supabase
+          removedFavorites.forEach(artistName => {
+            // We need to get the artist ID to remove - fetch it first
+            getArtistDetails(artistName).then(details => {
+              if (details && !details.id.startsWith('mock-')) {
+                removeUserArtist(currentAuthUser.id, details.id).catch(err => {
+                  console.error(`Failed to remove artist ${artistName} from Supabase:`, err);
+                });
+              }
+            }).catch(err => {
+              console.error(`Failed to get artist details for removal ${artistName}:`, err);
+            });
+          });
+        }
       }
     }
   };
 
   // Helper function to sync local favorites to Supabase user_artists table
-  const syncFavoritesToSupabase = async (userId: string, favorites: string[]) => {
-    if (favorites.length === 0) return;
+  const syncFavoritesToSupabase = async (userId: string, favorites: string[], replaceAll: boolean = false) => {
+    if (favorites.length === 0 && !replaceAll) return;
 
     try {
+      // If replaceAll with empty favorites, just delete all
+      if (favorites.length === 0 && replaceAll) {
+        await syncAllUserArtists(userId, [], true);
+        console.log('Cleared all favorites from Supabase');
+        return;
+      }
+
       // Fetch artist IDs for all favorites in parallel
       const artistPromises = favorites.map(async (artistName) => {
         try {
@@ -226,9 +243,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         (a): a is { artistId: string; artistName: string } => a !== null
       );
 
-      if (artists.length > 0) {
-        await syncAllUserArtists(userId, artists);
-        console.log(`Synced ${artists.length} favorites to Supabase`);
+      if (artists.length > 0 || replaceAll) {
+        await syncAllUserArtists(userId, artists, replaceAll);
+        console.log(`Synced ${artists.length} favorites to Supabase (replaceAll: ${replaceAll})`);
       }
     } catch (error) {
       console.error('Error syncing favorites to Supabase:', error);

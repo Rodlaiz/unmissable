@@ -49,15 +49,11 @@ export default function ArtistDetailScreen() {
   const [localEvents, setLocalEvents] = useState<Event[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isFollowing, setIsFollowing] = useState(() => user?.favorites?.includes(artistName) ?? false);
   const [isBioExpanded, setIsBioExpanded] = useState(false);
   const [isValidArtist, setIsValidArtist] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      setIsFollowing(user.favorites.includes(artistName));
-    }
-  }, [user?.favorites, artistName]);
+  // Derive isFollowing directly from user.favorites to avoid sync issues
+  const isFollowing = user?.favorites?.includes(artistName) ?? false;
 
   useEffect(() => {
     let isMounted = true;
@@ -153,14 +149,12 @@ export default function ArtistDetailScreen() {
         return; // Already following, do nothing
       }
     }
-    updateUser({
+    await updateUser({
       ...user,
       favorites: newFavorites,
     });
-    setIsFollowing(!alreadyFollowing);
 
     // Sync to Supabase if user is authenticated and we have a valid artist ID
-    const authUser = user.authUser;
     if (authUser && !user.isGuest && profile && isValidArtist) {
       if (alreadyFollowing) {
         // Remove from Supabase

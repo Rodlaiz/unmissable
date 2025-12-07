@@ -437,11 +437,27 @@ export const removeUserArtist = async (
 // Bulk sync all user artists (useful on sign-in to sync local favorites)
 export const syncAllUserArtists = async (
   userId: string,
-  artists: Array<{ artistId: string; artistName: string }>
+  artists: Array<{ artistId: string; artistName: string }>,
+  replaceAll: boolean = false
 ): Promise<{ success: boolean; error?: string }> => {
-  if (artists.length === 0) return { success: true };
-
   try {
+    // If replaceAll is true, delete all existing artists first
+    if (replaceAll) {
+      const { error: deleteError } = await supabase
+        .from('user_artists')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteError) {
+        console.error('Error deleting old user artists:', deleteError);
+        // Continue anyway - we'll still try to insert the new ones
+      } else {
+        console.log(`Deleted all existing artists for user ${userId}`);
+      }
+    }
+
+    if (artists.length === 0) return { success: true };
+
     const records = artists.map((artist) => ({
       user_id: userId,
       artist_id: artist.artistId,
@@ -457,7 +473,7 @@ export const syncAllUserArtists = async (
       return { success: false, error: error.message };
     }
 
-    console.log(`Bulk synced ${artists.length} artists for user ${userId}`);
+    console.log(`Bulk synced ${artists.length} artists for user ${userId} (replaceAll: ${replaceAll})`);
     return { success: true };
   } catch (error) {
     console.error('Error bulk syncing user artists:', error);
