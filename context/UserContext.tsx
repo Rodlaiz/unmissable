@@ -14,6 +14,7 @@ import {
   onAuthStateChange,
   syncUserProfile,
   syncAllUserArtists,
+  removeUserArtist,
   AuthResult,
 } from '../services/supabase';
 import { getArtistDetails } from '../services/ticketmaster';
@@ -135,6 +136,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateUser = async (prefs: UserPreferences) => {
+    // Get the previous favorites to detect changes
+    const previousFavorites = user?.favorites || [];
+    
     // Ensure favorites are always unique before saving (prevents race condition duplicates)
     const sanitizedPrefs = {
       ...prefs,
@@ -166,6 +170,35 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       } catch (error) {
         console.error('Error syncing location to Supabase:', error);
+      }
+    }
+
+    // Sync favorites to Supabase if user is authenticated and favorites changed
+    if (currentAuthUser && !sanitizedPrefs.isGuest) {
+      const newFavorites = sanitizedPrefs.favorites.filter(f => !previousFavorites.includes(f));
+      const removedFavorites = previousFavorites.filter(f => !sanitizedPrefs.favorites.includes(f));
+      
+      if (newFavorites.length > 0) {
+        // New favorites were added - sync them to Supabase
+        syncFavoritesToSupabase(currentAuthUser.id, newFavorites).catch(err => {
+          console.error('Failed to sync new favorites:', err);
+        });
+      }
+      
+      if (removedFavorites.length > 0) {
+        // Favorites were removed - remove them from Supabase
+        removedFavorites.forEach(artistName => {
+          // We need to get the artist ID to remove - fetch it first
+          getArtistDetails(artistName).then(details => {
+            if (details && !details.id.startsWith('mock-')) {
+              removeUserArtist(currentAuthUser.id, details.id).catch(err => {
+                console.error(`Failed to remove artist ${artistName} from Supabase:`, err);
+              });
+            }
+          }).catch(err => {
+            console.error(`Failed to get artist details for removal ${artistName}:`, err);
+          });
+        });
       }
     }
   };

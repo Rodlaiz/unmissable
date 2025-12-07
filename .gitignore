@@ -84,4 +84,8 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 expo-env.d.ts
+
+# Service account keys (sensitive)
+unmissable-*.json
+
 # @end expo-cli
