@@ -5,6 +5,7 @@ import { supabase } from '../services/supabase';
 /**
  * Hook to register for push notifications and save the token to Supabase.
  * Should be called after the user is authenticated.
+ * Skips guest users (IDs starting with 'guest_') since they don't have Supabase accounts.
  * 
  * @param userId - The authenticated user's ID, or null/undefined if not authenticated
  * @param userEmail - The authenticated user's email (optional, helps create user row if needed)
@@ -18,8 +19,8 @@ export function usePushNotifications(
   const hasRegistered = useRef(false);
 
   useEffect(() => {
-    // Skip if no user ID or already registered in this session
-    if (!userId || hasRegistered.current) {
+    // Skip if no user ID, guest user, or already registered in this session
+    if (!userId || userId.startsWith('guest_') || hasRegistered.current) {
       return;
     }
 

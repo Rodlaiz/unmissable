@@ -14,6 +14,7 @@ import { searchAttractions, searchEvents } from '../../services/ticketmaster';
 import { useUser } from '../../context/UserContext';
 import { Event } from '../../types';
 import { PRIMARY } from '../../constants/colors';
+import { buildLocationParams } from '../../utils/location';
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -38,14 +39,7 @@ export default function SearchScreen() {
           const results = await searchAttractions(query);
           setArtistResults(results);
         } else {
-          const locationParams = user
-            ? {
-                city: user.location.city,
-                latitude: user.location.latitude,
-                longitude: user.location.longitude,
-                radiusKm: user.location.radiusKm,
-              }
-            : undefined;
+          const locationParams = user ? buildLocationParams(user) : undefined;
           const results = await searchEvents(locationParams, query, undefined, 'relevance,desc', undefined, 20);
           setEventResults(results);
         }

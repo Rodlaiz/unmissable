@@ -15,11 +15,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '../../context/UserContext';
+import { useFavorites } from '../../hooks/useFavorites';
 import { Event, Category } from '../../types';
 import { searchEvents } from '../../services/ticketmaster';
 import { EventCard } from '../../components/EventCard';
 import { PRIMARY, PRIMARY_LIGHT } from '../../constants/colors';
 import { formatDateTime } from '../../utils/formatters';
+import { buildLocationParams } from '../../utils/location';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -39,7 +41,8 @@ const seededShuffle = <T,>(array: T[], seed: number): T[] => {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, updateUser } = useUser();
+  const { user } = useUser();
+  const { isFavorited, toggleFavorite, canFavorite } = useFavorites();
   const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,19 +51,11 @@ export default function HomeScreen() {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const bannerScrollRef = useRef<FlatList>(null);
 
-  // Memoize location to prevent unnecessary re-fetches when only favorites change
-  const userLocation = user?.location;
-
   const fetchFeedData = useCallback(async () => {
-    if (!userLocation) return;
+    if (!user) return;
 
     try {
-      const locationParams = {
-        city: userLocation.city,
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
-        radiusKm: userLocation.radiusKm,
-      };
+      const locationParams = buildLocationParams(user);
 
       let rawEvents: Event[] = [];
 
@@ -95,7 +90,7 @@ export default function HomeScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [userLocation, activeFilter, searchQuery]);
+  }, [user, activeFilter, searchQuery]);
 
   useEffect(() => {
     setLoading(true);
@@ -154,31 +149,13 @@ export default function HomeScreen() {
   };
 
   const handleFavorite = (event: Event) => {
-    if (!user || !event.artistName) return;
-    const artistName = event.artistName;
-    const isFavorited = user.favorites.includes(artistName);
-    
-    let newFavorites: string[];
-    if (isFavorited) {
-      newFavorites = user.favorites.filter((f) => f !== artistName);
-    } else {
-      // Prevent duplicates by checking again before adding
-      if (!user.favorites.includes(artistName)) {
-        newFavorites = [...user.favorites, artistName];
-      } else {
-        return; // Already favorited, do nothing
-      }
-    }
-    updateUser({ ...user, favorites: newFavorites });
+    if (!event.artistName) return;
+    toggleFavorite(event.artistName);
   };
 
   const isEventFavorited = (event: Event): boolean => {
-    if (!user || !event.artistName) return false;
-    return user.favorites.includes(event.artistName);
-  };
-
-  const canFavorite = (event: Event): boolean => {
-    return !!event.artistName;
+    if (!event.artistName) return false;
+    return isFavorited(event.artistName);
   };
 
   const BANNER_WIDTH = SCREEN_WIDTH - 32; // Full width minus padding
@@ -238,7 +215,7 @@ export default function HomeScreen() {
                 </View>
               </View>
               {/* Favorite button */}
-              {canFavorite(item) && (
+              {canFavorite(item.artistName) && (
                 <TouchableOpacity
                   onPress={() => handleFavorite(item)}
                   className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/30 items-center justify-center"
@@ -298,7 +275,7 @@ export default function HomeScreen() {
               event={item}
               layout="horizontal"
               onPress={() => handleEventPress(item.id)}
-              onFavorite={canFavorite(item) ? () => handleFavorite(item) : undefined}
+              onFavorite={canFavorite(item.artistName) ? () => handleFavorite(item) : undefined}
               isFavorited={isEventFavorited(item)}
             />
           )}
@@ -398,7 +375,7 @@ export default function HomeScreen() {
                     event={event}
                     layout="vertical"
                     onPress={() => handleEventPress(event.id)}
-                    onFavorite={canFavorite(event) ? () => handleFavorite(event) : undefined}
+                    onFavorite={canFavorite(event.artistName) ? () => handleFavorite(event) : undefined}
                     isFavorited={isEventFavorited(event)}
                   />
                 ))}

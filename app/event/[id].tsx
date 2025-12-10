@@ -13,9 +13,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Event } from '../../types';
 import { useUser } from '../../context/UserContext';
+import { useFavorites } from '../../hooks/useFavorites';
 import { getEventById, getArtistDetails } from '../../services/ticketmaster';
 import { getResaleOptions, ResaleOption } from '../../services/resale';
-import { syncUserArtist, removeUserArtist, trackTicketIntent } from '../../services/supabase';
+import { trackTicketIntent } from '../../services/supabase';
 import Button from '../../components/Button';
 import { PRIMARY } from '../../constants/colors';
 import { formatFullDate } from '../../utils/formatters';
@@ -24,46 +25,19 @@ export default function EventDetailScreen() {
   const { id, fromArtist } = useLocalSearchParams<{ id: string; fromArtist?: string }>();
   const router = useRouter();
   const hideArtistSection = fromArtist === 'true';
-  const { user, authUser, updateUser } = useUser();
+  const { user, authUser } = useUser();
+  const { isFavorited, toggleFavorite } = useFavorites();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [resaleOptions, setResaleOptions] = useState<ResaleOption[]>([]);
   const [loadingResale, setLoadingResale] = useState(false);
   const [artistId, setArtistId] = useState<string | null>(null);
 
-  const isFollowing = event?.artistName ? user?.favorites.includes(event.artistName) : false;
+  const isFollowing = event?.artistName ? isFavorited(event.artistName) : false;
 
-  const toggleFollow = async () => {
-    if (!user || !event?.artistName) return;
-    const artistName = event.artistName;
-    const alreadyFollowing = user.favorites.includes(artistName);
-    
-    let newFavorites: string[];
-    if (alreadyFollowing) {
-      newFavorites = user.favorites.filter((f) => f !== artistName);
-    } else {
-      // Prevent duplicates by checking again before adding
-      if (!user.favorites.includes(artistName)) {
-        newFavorites = [...user.favorites, artistName];
-      } else {
-        return; // Already following, do nothing
-      }
-    }
-    updateUser({ ...user, favorites: newFavorites });
-
-    // Sync to Supabase if user is authenticated and we have artist ID
-    const authUser = user.authUser;
-    if (authUser && !user.isGuest && artistId && !artistId.startsWith('mock-')) {
-      if (alreadyFollowing) {
-        removeUserArtist(authUser.id, artistId).catch((err) => {
-          console.error('Failed to remove artist from Supabase:', err);
-        });
-      } else {
-        syncUserArtist(authUser.id, artistId, artistName).catch((err) => {
-          console.error('Failed to sync artist to Supabase:', err);
-        });
-      }
-    }
+  const toggleFollow = () => {
+    if (!event?.artistName) return;
+    toggleFavorite(event.artistName, { artistId });
   };
 
   useEffect(() => {

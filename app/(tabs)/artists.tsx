@@ -18,6 +18,7 @@ import { syncUserArtist } from '../../services/supabase';
 import Card from '../../components/Card';
 import { PRIMARY } from '../../constants/colors';
 import { normalizeString, formatDateTime } from '../../utils/formatters';
+import { buildLocationParams } from '../../utils/location';
 
 const ArtistSkeleton = () => (
   <View className="bg-white rounded-2xl border border-gray-100 p-3 flex-row items-center gap-4 mb-3">
@@ -51,12 +52,7 @@ export default function ArtistsScreen() {
     const missing = targetArtists.filter((name) => !artistData[name]);
     if (missing.length === 0) return;
 
-    const locationParams = {
-      city: user.location.city,
-      latitude: user.location.latitude,
-      longitude: user.location.longitude,
-      radiusKm: 500,
-    };
+    const locationParams = buildLocationParams(user, { radiusKm: 500 });
 
     // Phase 1: Quickly fetch and display artist metadata (no events yet)
     const fetchArtistMetadata = async (name: string) => {

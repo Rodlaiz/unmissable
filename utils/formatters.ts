@@ -21,19 +21,6 @@ export const formatDateTime = (isoString: string): string => {
 };
 
 /**
- * Format a date with day and time (e.g., "Dec 5 • 10:30 AM")
- */
-export const formatDateWithTime = (isoString?: string): string => {
-  if (!isoString) return '';
-  try {
-    const d = new Date(isoString);
-    return `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
-  } catch {
-    return isoString;
-  }
-};
-
-/**
  * Format a full date for event details (e.g., "Thursday, December 5, 2025, 10:30 AM")
  */
 export const formatFullDate = (isoString: string): string => {
@@ -73,13 +60,4 @@ export const normalizeString = (str: string): string => {
     .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
-};
-
-/**
- * Check if a normalized name matches a target
- */
-export const nameMatches = (name: string, target: string): boolean => {
-  const normName = normalizeString(name);
-  const normTarget = normalizeString(target);
-  return normName.includes(normTarget) || normTarget.includes(normName);
 };

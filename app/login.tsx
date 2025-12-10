@@ -99,24 +99,8 @@ export default function LoginScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleAuthSuccess = async () => {
-    // Request notification permissions after successful login
-    const pushToken = await registerForPushNotificationsAsync();
-
-    // Update user with push token if we got one
-    if (user && pushToken) {
-      await updateUser({
-        ...user,
-        pushToken: pushToken,
-        notifications: {
-          ...user.notifications,
-          enabled: true,
-          dailyDigest: true,
-          weeklySummary: false,
-        },
-      });
-    }
-
+  const handleAuthSuccess = () => {
+    // Push notifications are handled by usePushNotifications hook in _layout.tsx
     // Navigate based on onboarding status
     if (user?.hasOnboarded) {
       router.replace('/(tabs)');
@@ -147,7 +131,7 @@ export default function LoginScreen() {
       } else if (authMode === 'signIn') {
         const result = await signIn(email, password);
         if (result.success) {
-          await handleAuthSuccess();
+          handleAuthSuccess();
         } else {
           Alert.alert('Sign In Failed', result.error || 'Please check your credentials.');
         }
@@ -162,7 +146,7 @@ export default function LoginScreen() {
               setSuccessMessage('');
             }, 5000);
           } else {
-            await handleAuthSuccess();
+            handleAuthSuccess();
           }
         } else {
           Alert.alert('Sign Up Failed', result.error || 'Please try again.');
@@ -180,7 +164,7 @@ export default function LoginScreen() {
     try {
       const result = await signInWithApple();
       if (result.success) {
-        await handleAuthSuccess();
+        handleAuthSuccess();
       } else if (result.error !== 'Sign in was cancelled.') {
         Alert.alert('Apple Sign In Failed', result.error || 'Please try again.');
       }
@@ -233,7 +217,7 @@ export default function LoginScreen() {
                 syncUserProfile(data.session.user).catch(err => {
                   console.error('Failed to sync user profile:', err);
                 });
-                await handleAuthSuccess();
+                handleAuthSuccess();
                 return;
               }
             }

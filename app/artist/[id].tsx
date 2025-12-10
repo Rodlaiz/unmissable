@@ -13,14 +13,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '../../context/UserContext';
+import { useFavorites } from '../../hooks/useFavorites';
 import { Event } from '../../types';
 import { getArtistDetails, searchEvents } from '../../services/ticketmaster';
 import { getArtistBio } from '../../services/wikipedia';
-import { getArtistDiscography } from '../../services/theaudiodb';
-import { syncUserArtist, removeUserArtist, trackTicketIntent } from '../../services/supabase';
+import { getArtistDiscography } from '../../services/itunes';
+import { trackTicketIntent } from '../../services/supabase';
 import Button from '../../components/Button';
 import { PRIMARY } from '../../constants/colors';
-import { normalizeString } from '../../utils/formatters';
+import { normalizeString, getDateParts } from '../../utils/formatters';
+import { buildExtendedLocationParams } from '../../utils/location';
 
 interface ArtistFullProfile {
   id: string;
@@ -42,7 +44,8 @@ export default function ArtistDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const artistName = decodeURIComponent(id || '');
   const router = useRouter();
-  const { user, authUser, updateUser } = useUser();
+  const { user, authUser } = useUser();
+  const { isFavorited, toggleFavorite } = useFavorites();
 
   const [profile, setProfile] = useState<ArtistFullProfile | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
@@ -52,8 +55,8 @@ export default function ArtistDetailScreen() {
   const [isBioExpanded, setIsBioExpanded] = useState(false);
   const [isValidArtist, setIsValidArtist] = useState(false);
 
-  // Derive isFollowing directly from user.favorites to avoid sync issues
-  const isFollowing = user?.favorites?.includes(artistName) ?? false;
+  // Derive isFollowing directly from useFavorites hook
+  const isFollowing = isFavorited(artistName);
 
   useEffect(() => {
     let isMounted = true;
@@ -80,15 +83,7 @@ export default function ArtistDetailScreen() {
             bio: wikiBio || fallbackBio,
           });
 
-          const searchRadius = user ? Math.max(user.location.radiusKm, 500) : 500;
-          const locParams = user
-            ? {
-                city: user.location.city,
-                latitude: user.location.latitude,
-                longitude: user.location.longitude,
-                radiusKm: searchRadius,
-              }
-            : undefined;
+          const locParams = user ? buildExtendedLocationParams(user, 500) : undefined;
 
           const [localData, globalData, discographyData] = await Promise.all([
             // Local Events
@@ -135,38 +130,11 @@ export default function ArtistDetailScreen() {
     };
   }, [artistName, user?.location]);
 
-  const toggleFollow = async () => {
-    if (!user) return;
-    let newFavorites: string[];
-    const alreadyFollowing = user.favorites.includes(artistName);
-    if (alreadyFollowing) {
-      newFavorites = user.favorites.filter((f) => f !== artistName);
+  const toggleFollow = () => {
+    if (!profile || !isValidArtist) {
+      toggleFavorite(artistName);
     } else {
-      // Prevent duplicates by checking again before adding
-      if (!user.favorites.includes(artistName)) {
-        newFavorites = [...user.favorites, artistName];
-      } else {
-        return; // Already following, do nothing
-      }
-    }
-    await updateUser({
-      ...user,
-      favorites: newFavorites,
-    });
-
-    // Sync to Supabase if user is authenticated and we have a valid artist ID
-    if (authUser && !user.isGuest && profile && isValidArtist) {
-      if (alreadyFollowing) {
-        // Remove from Supabase
-        removeUserArtist(authUser.id, profile.id).catch((err) => {
-          console.error('Failed to remove artist from Supabase:', err);
-        });
-      } else {
-        // Add to Supabase
-        syncUserArtist(authUser.id, profile.id, artistName).catch((err) => {
-          console.error('Failed to sync artist to Supabase:', err);
-        });
-      }
+      toggleFavorite(artistName, { artistId: profile.id });
     }
   };
 
@@ -192,21 +160,12 @@ export default function ArtistDetailScreen() {
     }
   };
 
-  const getEventDateParts = (isoDate: string) => {
-    const d = new Date(isoDate);
-    return {
-      month: d.toLocaleString('en-US', { month: 'short' }).toUpperCase(),
-      day: d.getDate(),
-      year: d.getFullYear(),
-    };
-  };
-
   const openLink = async (url?: string) => {
     if (url) await WebBrowser.openBrowserAsync(url);
   };
 
   const renderEventRow = (event: Event, isLocal = false) => {
-    const { month, day, year } = getEventDateParts(event.date);
+    const { month, day, year } = getDateParts(event.date);
     const currentYear = new Date().getFullYear();
     const showYear = year > currentYear;
     const isSoldOut = event.availability === 'SOLD_OUT';
